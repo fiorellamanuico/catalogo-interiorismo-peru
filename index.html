@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catálogo Interiorismo Perú</title>
+  <meta name="description" content="Catálogo personal de productos, materiales y proveedores para interiorismo en Perú." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#">
+      <span class="brand-mark">CI</span>
+      <span>
+        <strong>Catálogo</strong>
+        <small>Interiorismo Perú</small>
+      </span>
+    </a>
+    <nav>
+      <a href="#catalogo">Catálogo</a>
+      <a href="#marcas">Marcas</a>
+      <button class="favorites-btn" id="favoritesBtn">♡ Favoritos <span id="favoriteCount">0</span></button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <p class="eyebrow">PRODUCTOS · MATERIALES · PROVEEDORES</p>
+        <h1>Todo lo que puedes<br /><em>especificar</em> en un solo lugar.</h1>
+        <p class="hero-copy">Una biblioteca visual para descubrir muebles, iluminación, acabados, sanitarios y más.</p>
+        <div class="search-wrap">
+          <span>⌕</span>
+          <input id="searchInput" type="search" placeholder="Buscar silla, porcelanato, Nihm..." />
+        </div>
+      </div>
+    </section>
+
+    <section class="categories" id="catalogo">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">EXPLORAR</p>
+          <h2>Categorías</h2>
+        </div>
+      </div>
+      <div class="category-grid" id="categoryGrid"></div>
+    </section>
+
+    <section class="products-section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">SELECCIÓN</p>
+          <h2>Productos</h2>
+        </div>
+        <div class="filters">
+          <button class="filter active" data-filter="Todos">Todos</button>
+          <button class="filter" data-filter="Mobiliario">Mobiliario</button>
+          <button class="filter" data-filter="Iluminación">Iluminación</button>
+          <button class="filter" data-filter="Baño">Baño</button>
+          <button class="filter" data-filter="Acabados">Acabados</button>
+        </div>
+      </div>
+      <div class="product-grid" id="productGrid"></div>
+    </section>
+
+    <section class="brands-section" id="marcas">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">PROVEEDORES</p>
+          <h2>Marcas</h2>
+        </div>
+      </div>
+      <div class="brand-list">
+        <span>Nihm</span><span>Roca</span><span>Vainsa</span><span>Porcelanosa</span><span>Celima</span><span>Artemide</span>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>Catálogo Interiorismo Perú · V0</span>
+    <span>Biblioteca personal de especificación</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
