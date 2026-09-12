@@ -279,10 +279,13 @@ function renderProjectPage(){
     ${items.length?`<div class="project-products-list">${items.map((item,index)=>{
       const x=productFromDbId(item.product_id);
       const productHref=x?`producto.html?slug=${encodeURIComponent(x.slug)}`:'#';
-      const calc=item.purchase_quantity!=null?item.purchase_quantity:item.calculated_quantity!=null?item.calculated_quantity:item.quantity;
-      const room=item.room||'';
       const qty=Number(item.quantity)||0;
       const waste=Number(item.waste_percent)||0;
+      const calculated=Number((qty*(1+waste/100)).toFixed(3));
+      const purchaseUnit=item.purchase_unit||item.unit||'und.';
+      const purchaseFactor=Number(item.purchase_factor)||1;
+      const purchaseQty=Math.ceil((calculated||0)/purchaseFactor*1000)/1000;
+      const room=item.room||'';
       const unit=item.unit||'und.';
       return `<article class="project-product-row" data-item-id="${esc(item.id)}">
         <a class="project-product-main" href="${productHref}"><div class="project-product-index">${String(index+1).padStart(2,'0')}</div><div><h3>${x?esc(x.name):'Producto'}</h3><p>${x?esc(x.brand):'Producto del catálogo'}</p></div></a>
@@ -291,7 +294,10 @@ function renderProjectPage(){
           <div class="field-wrap"><span>CANTIDAD</span><input data-item-field="quantity" type="number" min="0" step="0.001" value="${qty}"><small class="project-save-state" data-save-state></small></div>
           <div class="field-wrap"><span>UNIDAD</span><select data-item-field="unit">${['und.','m²','m','ml','kg','g','l','set'].map(u=>`<option value="${u}" ${u===unit?'selected':''}>${u}</option>`).join('')}</select><small class="project-save-state" data-save-state></small></div>
           <div class="field-wrap"><span>MERMA %</span><input data-item-field="waste_percent" type="number" min="0" step="0.1" value="${waste}"><small class="project-save-state" data-save-state></small></div>
-          <div class="field-wrap" style="grid-column:1/-1"><span>A COMPRAR</span><strong data-calculated>${calc!=null?esc(String(calc)):'—'} ${esc(item.purchase_unit||unit)}</strong><small class="project-save-state" data-calc-state>Se calcula según la configuración de compra.</small></div>
+          <div class="field-wrap"><span>UNIDAD DE COMPRA</span><input data-item-field="purchase_unit" type="text" value="${esc(purchaseUnit)}" placeholder="Ej. caja"><small class="project-save-state"></small></div>
+          <div class="field-wrap"><span>CONTENIDO / UNIDAD</span><input data-item-field="purchase_factor" type="number" min="0.001" step="0.001" value="${purchaseFactor}"><small class="project-save-state"></small></div>
+          <div class="field-wrap"><span>CANTIDAD CON MERMA</span><strong data-calculated>${Number(calculated.toFixed(3))} ${esc(unit)}</strong><small class="project-save-state" data-calc-state>${waste?`Incluye ${waste}% de merma.`:'Sin merma aplicada.'}</small></div>
+          <div class="field-wrap" style="grid-column:1/-1"><span>A COMPRAR</span><strong data-calculated>${purchaseQty} ${esc(purchaseUnit)}</strong><small class="project-save-state" data-calc-state>Redondeado según ${purchaseFactor} ${esc(unit)} por ${esc(purchaseUnit)}.</small></div>
         </div>
       </article>`;
     }).join('')}</div>`:'<div class="project-empty"><h3>Este proyecto todavía no tiene productos.</h3><p>Agrega productos desde cualquier ficha del catálogo.</p><button class="primary" id="projectAddEmpty">＋ Agregar producto</button></div>'}
@@ -305,13 +311,21 @@ function renderProjectPage(){
     const field=input.dataset.itemField;
     if(!item||!field) return;
     let value=input.value;
-    if(field==='quantity'||field==='waste_percent') value=Number(value);
+    if(field==='quantity'||field==='waste_percent'||field==='purchase_factor') value=Number(value);
+    if(field==='purchase_unit' && value.trim()==='') value=null;
     if(field==='room' && value.trim()==='') value=null;
     const stateEl=input.parentElement.querySelector('[data-save-state]');
     if(stateEl) stateEl.textContent='Guardando…';
     input.disabled=true;
     try{
-      const {data,error}=await supabaseClient.from('project_items').update({[field]:value}).eq('id',item.id).select('id,project_id,product_id,room,quantity,unit,waste_percent,calculated_quantity,purchase_unit,purchase_factor,purchase_quantity,price,currency,supplier_name,quote_status,notes,added_by,created_at,updated_at').single();
+      const nextQuantity=field==='quantity'?value:Number(item.quantity)||0;
+      const nextWaste=field==='waste_percent'?value:Number(item.waste_percent)||0;
+      const nextFactor=field==='purchase_factor'?value:Number(item.purchase_factor)||1;
+      const nextPurchaseUnit=field==='purchase_unit'?value:(item.purchase_unit||item.unit||'und.');
+      const nextCalculated=Number((nextQuantity*(1+nextWaste/100)).toFixed(3));
+      const nextPurchaseQuantity=nextFactor>0?Number((Math.ceil((nextCalculated/nextFactor)*1000)/1000).toFixed(3)):null;
+      const updatePayload={[field]:value,calculated_quantity:nextCalculated,purchase_quantity:nextPurchaseQuantity,purchase_unit:nextPurchaseUnit,purchase_factor:nextFactor};
+      const {data,error}=await supabaseClient.from('project_items').update(updatePayload).eq('id',item.id).select('id,project_id,product_id,room,quantity,unit,waste_percent,calculated_quantity,purchase_unit,purchase_factor,purchase_quantity,price,currency,supplier_name,quote_status,notes,added_by,created_at,updated_at').single();
       if(error) throw error;
       Object.assign(item,data);
       if(stateEl) stateEl.textContent='Guardado ✓';
