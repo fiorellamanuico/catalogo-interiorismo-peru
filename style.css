@@ -35,8 +35,8 @@ footer{padding:28px 7vw;border-top:1px solid var(--line);display:flex;justify-co
 @media(max-width:850px){.category-page-head,.favorites-page-head{padding:38px 5vw 25px}.category-page-head h1,.favorites-page-head h1{font-size:50px}.category-arrow{right:14px}.product-not-found{padding:55px 5vw 80px}}
 
 
-/* V1.2.1 — catálogo más limpio y respirado */
-.product-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;columns:auto}
+/* V1.2.2 — catálogo compacto: 4 columnas desktop */
+.product-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;columns:auto}
 .product-card{break-inside:initial;margin:0;min-width:0;transition:transform .2s,box-shadow .2s}
 .product-card:hover{transform:translateY(-3px);box-shadow:0 14px 32px rgba(0,0,0,.06)}
 .product-image{aspect-ratio:4/4.7;padding:0;display:block;overflow:hidden}
@@ -63,8 +63,8 @@ footer{padding:28px 7vw;border-top:1px solid var(--line);display:flex;justify-co
 .gallery-thumb.active{border-color:var(--ink)}
 .page-thumb{padding:0;aspect-ratio:1.25;border:1px solid transparent}
 .page-thumb.active{border-color:var(--ink)}
-@media(max-width:1000px){.product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:600px){.product-grid{grid-template-columns:1fr;gap:14px}.product-image{aspect-ratio:4/4.5}.product-info h3{font-size:20px}.product-actions{flex-wrap:wrap}.quick-view,.text-link{flex:1}.product-bottom{font-size:10px}}
+@media(max-width:1100px){.product-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:650px){.product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.product-image{aspect-ratio:1/1}.product-info h3{font-size:13px}.product-actions{flex-wrap:wrap}.quick-view,.text-link{flex:1}.product-bottom{font-size:9px}}
 
 @media(max-width:850px){.product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.product-image{aspect-ratio:4/3}.quick-view{display:none}.product-info{padding:12px 12px 13px}.product-name{font-size:13px}.product-actions{grid-template-columns:1fr}.product-actions .text-link{justify-self:start}}
 @media(max-width:520px){.product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.product-image{aspect-ratio:1/1}.product-info{padding:10px}.product-category{font-size:8px}.product-name{font-size:12px;margin-bottom:6px}.product-brand{font-size:9px}.product-bottom{font-size:9px;flex-direction:column;gap:3px}.product-file-count{font-size:7px}.heart{width:30px;height:30px;top:8px;right:8px}}
