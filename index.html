@@ -1,95 +1,30 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Catálogo Interiorismo Perú</title>
-  <meta name="description" content="Biblioteca visual de productos, materiales y proveedores para interiorismo en Perú.">
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catálogo Interiorismo Perú</title>
+<meta name="description" content="Biblioteca visual de productos, materiales y proveedores para interiorismo en Perú.">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="site-header">
-    <a class="brand" href="#">
-      <span class="brand-mark">CI</span>
-      <span><strong>Catálogo</strong><small>Interiorismo Perú</small></span>
-    </a>
-    <nav>
-      <a href="#catalogo">Catálogo</a>
-      <a href="#marcas">Marcas</a>
-      <button class="nav-btn" id="projectsBtn">Proyectos <b id="projectCount">0</b></button>
-      <button class="nav-btn" id="favoritesBtn">♡ Favoritos <b id="favoriteCount">0</b></button>
-    </nav>
-  </header>
-
-  <main>
-    <section class="hero">
-      <div class="hero-inner">
-        <p class="eyebrow">PRODUCTOS · MATERIALES · PROVEEDORES</p>
-        <h1>Todo lo que puedes<br><em>especificar</em> en un solo lugar.</h1>
-        <p class="hero-copy">Una biblioteca visual para descubrir, guardar y organizar productos para tus proyectos de interiorismo.</p>
-        <div class="search-row">
-          <div class="search-wrap">
-            <span>⌕</span>
-            <input id="searchInput" type="search" placeholder="Buscar silla, porcelanato, Nihm...">
-          </div>
-          <button class="visual-search" id="visualSearchBtn">⌁ <span>Buscar por imagen</span></button>
-        </div>
-        <p class="visual-note">Búsqueda visual: próximamente · la interfaz ya está preparada.</p>
-      </div>
-    </section>
-
-    <section class="categories" id="catalogo">
-      <div class="section-heading">
-        <div><p class="eyebrow">EXPLORAR</p><h2>Categorías</h2></div>
-      </div>
-      <div class="category-grid" id="categoryGrid"></div>
-    </section>
-
-    <section class="products-section">
-      <div class="section-heading">
-        <div><p class="eyebrow">CATÁLOGO</p><h2>Productos</h2><p class="results" id="resultsCount"></p></div>
-        <button class="filter-toggle" id="filterToggle">Filtros <span>＋</span></button>
-      </div>
-
-      <div class="filter-panel" id="filterPanel">
-        <div class="filter-group"><label>Categoría</label><div class="chips" id="categoryFilters"></div></div>
-        <div class="filter-group"><label>Material</label><div class="chips" id="materialFilters"></div></div>
-        <div class="filter-group"><label>Estilo</label><div class="chips" id="styleFilters"></div></div>
-        <div class="filter-group"><label>Archivos</label><div class="chips" id="fileFilters"></div></div>
-      </div>
-
-      <div class="product-grid" id="productGrid"></div>
-    </section>
-
-    <section class="brands-section" id="marcas">
-      <div class="section-heading">
-        <div><p class="eyebrow">PROVEEDORES</p><h2>Marcas</h2></div>
-        <span class="brand-count">6 marcas de muestra</span>
-      </div>
-      <div class="brand-list" id="brandList"></div>
-    </section>
-  </main>
-
-  <aside class="drawer" id="projectDrawer" aria-hidden="true">
-    <div class="drawer-head"><div><p class="eyebrow">MI BIBLIOTECA</p><h2>Proyectos</h2></div><button class="close-btn" data-close="projectDrawer">×</button></div>
-    <div class="new-project"><input id="projectNameInput" placeholder="Nombre del proyecto..."><button id="addProjectBtn">+ Crear</button></div>
-    <div id="projectList" class="project-list"></div>
-  </aside>
-  <div class="drawer-backdrop" id="drawerBackdrop"></div>
-
-  <div class="modal" id="productModal" aria-hidden="true">
-    <div class="modal-card">
-      <button class="close-btn" data-close="productModal">×</button>
-      <div id="modalContent"></div>
-    </div>
-  </div>
-
-  <div class="toast" id="toast"></div>
-
-  <footer>
-    <span>Catálogo Interiorismo Perú · V0.1</span>
-    <span>Biblioteca personal de especificación</span>
-  </footer>
-  <script src="app.js"></script>
+<header class="site-header">
+<a class="brand" href="#"><span class="brand-mark">CI</span><span><strong>Catálogo</strong><small>Interiorismo Perú</small></span></a>
+<nav><a href="#catalogo">Catálogo</a><a href="#marcas">Marcas</a><button class="nav-btn" id="projectsBtn">Proyectos <b id="projectCount">0</b></button><button class="nav-btn" id="favoritesBtn">♡ Favoritos <b id="favoriteCount">0</b></button></nav>
+</header>
+<main>
+<section class="hero"><div class="hero-inner"><p class="eyebrow">PRODUCTOS · MATERIALES · PROVEEDORES</p><h1>Todo lo que puedes<br><em>especificar</em> en un solo lugar.</h1><p class="hero-copy">Una biblioteca visual para descubrir, guardar y organizar productos para tus proyectos de interiorismo.</p><div class="search-row"><div class="search-wrap"><span>⌕</span><input id="searchInput" type="search" placeholder="Buscar producto, marca, material, SKU..."></div><button class="visual-search" id="visualSearchBtn">⌁ <span>Buscar por imagen</span></button></div><p class="visual-note">Búsqueda visual: próximamente · la interfaz ya está preparada.</p></div></section>
+<section class="categories" id="catalogo"><div class="section-heading"><div><p class="eyebrow">EXPLORAR</p><h2>Categorías</h2></div></div><div class="category-grid" id="categoryGrid"></div></section>
+<section class="products-section"><div class="section-heading"><div><p class="eyebrow">CATÁLOGO</p><h2>Productos</h2><p class="results" id="resultsCount"></p></div><button class="filter-toggle" id="filterToggle">Filtros <span>＋</span></button></div>
+<div class="filter-panel" id="filterPanel"><div class="filter-group"><label>Categoría</label><div class="chips" id="categoryFilters"></div></div><div class="filter-group"><label>Material</label><div class="chips" id="materialFilters"></div></div><div class="filter-group"><label>Estilo</label><div class="chips" id="styleFilters"></div></div><div class="filter-group"><label>Archivos</label><div class="chips" id="fileFilters"></div></div><div class="filter-group"><label>Disponibilidad</label><div class="chips" id="availabilityFilters"></div></div><div class="filter-group"><label>Uso</label><div class="chips" id="applicationFilters"></div></div></div>
+<div class="product-grid" id="productGrid"></div></section>
+<section class="brands-section" id="marcas"><div class="section-heading"><div><p class="eyebrow">PROVEEDORES</p><h2>Marcas</h2></div><span class="brand-count" id="brandCount"></span></div><div class="brand-list" id="brandList"></div></section>
+</main>
+<aside class="drawer" id="projectDrawer" aria-hidden="true"><div class="drawer-head"><div><p class="eyebrow">MI BIBLIOTECA</p><h2>Proyectos</h2></div><button class="close-btn" data-close="projectDrawer">×</button></div><div class="new-project"><input id="projectNameInput" placeholder="Nombre del proyecto..."><button id="addProjectBtn">+ Crear</button></div><div id="projectList" class="project-list"></div></aside><div class="drawer-backdrop" id="drawerBackdrop"></div>
+<div class="modal" id="productModal" aria-hidden="true"><div class="modal-card"><button class="close-btn" data-close="productModal">×</button><div id="modalContent"></div></div></div>
+<div class="modal project-picker-modal" id="projectPicker" aria-hidden="true"><div class="picker-card"><button class="close-btn" onclick="closeProjectPicker()">×</button><div id="projectPickerContent"></div></div></div>
+<div class="toast" id="toast"></div>
+<footer><span>Catálogo Interiorismo Perú · V1</span><span>Biblioteca personal de especificación</span></footer>
+<script src="app.js"></script>
 </body>
 </html>
