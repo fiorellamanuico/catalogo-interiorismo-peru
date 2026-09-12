@@ -1,6 +1,9 @@
-/* Supabase: autenticación privada. La conexión de datos se incorporará en el siguiente paso. */
+/* Supabase: autenticación privada + favoritos sincronizados. */
 let supabaseClient = null;
 let authUser = null;
+const productDbIds = new Map();
+let favoritesReady = false;
+
 async function initSupabaseAuth(){
   const cfg=window.SUPABASE_CONFIG||{};
   if(!window.supabase || !cfg.url || !cfg.publishableKey || cfg.publishableKey.includes('PEGA_AQUI')){
@@ -29,6 +32,51 @@ function renderAuthUI(){
   });
 }
 function escAuth(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+
+async function initSupabaseFavorites(){
+  if(!supabaseClient || !authUser) return false;
+  const slugs=products.map(p=>p.slug);
+  const {data:dbProducts,error:productError}=await supabaseClient
+    .from('products').select('id,slug').in('slug',slugs);
+  if(productError){ console.error(productError); toast('No se pudo conectar favoritos con la base de datos.'); return false; }
+  productDbIds.clear();
+  (dbProducts||[]).forEach(row=>productDbIds.set(row.slug,row.id));
+  if(productDbIds.size===0){ toast('Primero necesitamos cargar los productos en Supabase.'); return false; }
+
+  const localBeforeMigration=[...state.favorites];
+  const migrationKey='ci-favorites-migrated-v1';
+  if(!localStorage.getItem(migrationKey) && localBeforeMigration.length){
+    const rows=localBeforeMigration.map(localId=>{
+      const p=products.find(x=>x.id===localId); const dbId=p&&productDbIds.get(p.slug);
+      return dbId?{user_id:authUser.id,product_id:dbId}:null;
+    }).filter(Boolean);
+    if(rows.length){
+      const {error}=await supabaseClient.from('favorites').upsert(rows,{onConflict:'user_id,product_id',ignoreDuplicates:true});
+      if(error){ console.error(error); toast('No se pudieron migrar algunos favoritos.'); return false; }
+    }
+    localStorage.setItem(migrationKey,'1');
+  } else if(!localStorage.getItem(migrationKey)){
+    localStorage.setItem(migrationKey,'1');
+  }
+
+  const {data:remote,error:favoriteError}=await supabaseClient
+    .from('favorites').select('product_id').eq('user_id',authUser.id);
+  if(favoriteError){ console.error(favoriteError); toast('No se pudieron cargar tus favoritos.'); return false; }
+  const dbToLocal=new Map(products.map(p=>[productDbIds.get(p.slug),p.id]));
+  state.favorites=new Set((remote||[]).map(r=>dbToLocal.get(r.product_id)).filter(id=>id!=null));
+  save();
+  favoritesReady=true;
+  updateCounts();
+  refreshCurrentPage();
+  return true;
+}
+
+function refreshCurrentPage(){
+  if($('productGrid')) renderProducts();
+  if($('favoritesProductGrid')) renderFavoritesPage();
+  if($('categoryProductGrid')) renderCategoryPage();
+  if($('productPage')) renderProductPage();
+}
 
 /* V1 — estructura preparada para crecer: ficha base + especificaciones por categoría. */
 const products = [
@@ -91,15 +139,29 @@ function detail(label,value){return `<div class="detail"><strong>${esc(label)}</
 function technicalDetails(p){const t=p.technical||{};const map={power:"Potencia",lumens:"Lúmenes",colorTemperature:"Temperatura de color",CRI:"CRI",IP:"IP",dimmable:"Dimerizable",installation:"Instalación",waterConsumption:"Consumo de agua",flowRate:"Caudal",format:"Formato",rectified:"Rectificado",shadeVariation:"Variación de tono",slipRating:"Antideslizante",piecesPerBox:"Piezas/caja",coveragePerBox:"m²/caja",recommendedGrout:"Boquilla recomendada"};return Object.entries(map).filter(([k])=>t[k]&&t[k]!=="—").map(([k,l])=>detail(l,t[k])).join("")}
 function openProduct(id){const p=products.find(x=>x.id===id);if(!p||!$("productModal")||!( $("modalContent") )){toast("No se pudo abrir la vista rápida");return;}const images=p.images||[];const files=allFiles(p);$("modalContent").innerHTML=`<div class="modal-content"><div class="gallery"><div class="gallery-main" id="galleryMain" style="background:linear-gradient(145deg,${p.tone1},${p.tone2})"><span class="gallery-label" id="galleryLabel" aria-hidden="true"></span><button class="gallery-arrow prev" id="galleryPrev">‹</button><button class="gallery-arrow next" id="galleryNext">›</button><span class="gallery-counter" id="galleryCounter">1 / ${images.length}</span></div><div class="gallery-thumbs">${images.map((im,i)=>`<button class="gallery-thumb ${i===0?'active':''}" data-gallery="${i}" style="background:linear-gradient(145deg,${p.tone1},${p.tone2})">${esc(im)}</button>`).join("")}</div></div><div class="modal-info"><p class="eyebrow">${esc(p.category)} · ${esc(p.subcategory)}</p><h3>${esc(p.name)}</h3><div class="modal-brand">${esc(p.brand)} · ${esc(p.collection)}</div><div class="modal-price">${p.price==null?"Consultar precio":esc(p.currency==="PEN"?`S/ ${p.price}`:p.price)}</div><p class="modal-description">${esc(p.description)}</p><div class="detail-grid">${detail("SKU",p.sku)}${detail("Diseñador",p.designer)}${detail("Fabricante",p.manufacturer)}${detail("Año",p.year)}${detail("Materialidad",p.materials.join(", "))}${detail("Construcción",p.construction)}${detail("Acabado",p.finish.join(", "))}${detail("Textura",p.surfaceTexture)}${detail("Color",p.colors.join(", "))}${detail("Variantes",p.variants.join(", "))}${detail("Dimensiones",Object.values(p.dimensions||{}).filter(Boolean).join(" × ")||"—")}${detail("Estilo",p.style.join(", "))}${detail("Uso",p.applications.join(", "))}${detail("Interior / exterior",p.indoorOutdoor)}${detail("Disponibilidad",p.availability)}${detail("Tiempo de entrega",p.leadTime)}${detail("Pedido mínimo",p.minimumOrder)}${detail("Garantía",p.warranty)}${detail("Origen",p.countryOfOrigin)}${detail("Precio actualizado",p.priceLastUpdated)}${detail("Mantenimiento",p.maintenance)}${technicalDetails(p)}</div><div class="file-section"><span class="file-title">ARCHIVOS DISPONIBLES</span><div class="badges">${files.map(f=>`<span class="badge">${esc(f)}</span>`).join("")||'<span class="empty">Pendiente</span>'}</div></div><div class="modal-actions"><button class="primary" onclick="openProjectPicker(${p.id});closeModal('productModal')">＋ Añadir a proyecto</button><button onclick="toggleFavorite(${p.id})">♡ Favorito</button></div></div></div>`;let gi=0;const show=i=>{gi=(i+images.length)%images.length;$("galleryLabel").textContent=images[gi];$("galleryCounter").textContent=`${gi+1} / ${images.length}`;document.querySelectorAll('.gallery-thumb').forEach((b,j)=>b.classList.toggle('active',j===gi))};$("galleryPrev").onclick=()=>show(gi-1);$("galleryNext").onclick=()=>show(gi+1);document.querySelectorAll('.gallery-thumb').forEach(b=>b.onclick=()=>show(+b.dataset.gallery));$("productModal").classList.add('open')}
 function closeModal(id){$(id).classList.remove("open")}
-function toggleFavorite(id){
-  state.favorites.has(id)?state.favorites.delete(id):state.favorites.add(id);
+async function toggleFavorite(id){
+  const p=products.find(x=>x.id===id);
+  const dbId=p&&productDbIds.get(p.slug);
+  if(!favoritesReady || !dbId){ toast('Favoritos todavía no están listos.'); return; }
+  const wasFavorite=state.favorites.has(id);
+  if(wasFavorite) state.favorites.delete(id); else state.favorites.add(id);
   save(); updateCounts();
-  if($("productGrid")) renderProducts();
-  if($("favoritesProductGrid")) renderFavoritesPage();
-  if($("categoryProductGrid")) renderCategoryPage();
-  const cardBtn=document.querySelector(`[data-favorite="${id}"]`);
-  if(cardBtn){const on=state.favorites.has(id);cardBtn.classList.toggle("saved",on);cardBtn.textContent=on?"♥":"♡";cardBtn.setAttribute("aria-label",on?"Quitar de favoritos":"Guardar en favoritos");}
-  toast(state.favorites.has(id)?"Guardado en favoritos":"Eliminado de favoritos");
+  refreshCurrentPage();
+  try{
+    if(wasFavorite){
+      const {error}=await supabaseClient.from('favorites').delete().eq('user_id',authUser.id).eq('product_id',dbId);
+      if(error) throw error;
+    } else {
+      const {error}=await supabaseClient.from('favorites').upsert({user_id:authUser.id,product_id:dbId},{onConflict:'user_id,product_id',ignoreDuplicates:true});
+      if(error) throw error;
+    }
+    toast(wasFavorite?'Eliminado de favoritos':'Guardado en favoritos');
+  }catch(error){
+    console.error(error);
+    if(wasFavorite) state.favorites.add(id); else state.favorites.delete(id);
+    save(); updateCounts(); refreshCurrentPage();
+    toast('No se pudo guardar el cambio.');
+  }
 }
 function openDrawer(){if(!$('projectDrawer'))return;$("projectDrawer").classList.add("open");$("drawerBackdrop").classList.add("open");renderProjects()};function closeDrawer(){if(!$('projectDrawer'))return;$("projectDrawer").classList.remove("open");$("drawerBackdrop").classList.remove("open")}
 function renderProjects(){const list=$("projectList");if(!state.projects.length){list.innerHTML='<div class="empty">Todavía no tienes proyectos.<br>Créelos arriba y luego guarda productos dentro de ellos.</div>';return}list.innerHTML=state.projects.map((p,i)=>`<article class="project-card"><div class="project-title"><strong>${esc(p.name)}</strong><span class="project-count">${p.items.length} productos</span></div>${p.items.length?`<div class="project-items">${p.items.map(id=>{const x=products.find(z=>z.id===id);return `<div class="mini-item">${x?esc(x.name):"Producto"}</div>`}).join("")}</div>`:'<div class="empty">Sin productos todavía.</div>'}</article>`).join("")}
@@ -121,7 +183,9 @@ function initCommonUI(){
   const ok=await initSupabaseAuth();
   if(!ok) return;
   initCommonUI();
+  await initSupabaseFavorites();
   initIndexPage();
+  refreshCurrentPage();
 })();
 
 const categoryDescriptions={
