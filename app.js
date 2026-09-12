@@ -1,3 +1,35 @@
+/* Supabase: autenticación privada. La conexión de datos se incorporará en el siguiente paso. */
+let supabaseClient = null;
+let authUser = null;
+async function initSupabaseAuth(){
+  const cfg=window.SUPABASE_CONFIG||{};
+  if(!window.supabase || !cfg.url || !cfg.publishableKey || cfg.publishableKey.includes('PEGA_AQUI')){
+    console.warn('Supabase no está configurado todavía.');
+    return false;
+  }
+  supabaseClient=window.supabase.createClient(cfg.url,cfg.publishableKey);
+  const {data,error}=await supabaseClient.auth.getSession();
+  if(error || !data.session){ location.replace('login.html'); return false; }
+  authUser=data.session.user;
+  renderAuthUI();
+  supabaseClient.auth.onAuthStateChange((event,session)=>{
+    if(event==='SIGNED_OUT'){ location.replace('login.html'); }
+    else if(session){ authUser=session.user; renderAuthUI(); }
+  });
+  return true;
+}
+function renderAuthUI(){
+  document.querySelectorAll('.site-header nav').forEach(nav=>{
+    if(nav.querySelector('.auth-user')) return;
+    const wrap=document.createElement('span');
+    wrap.className='auth-user';
+    wrap.innerHTML=`<span>${escAuth(authUser?.email||'')}</span><button class="logout-btn" type="button">Salir</button>`;
+    nav.appendChild(wrap);
+    wrap.querySelector('.logout-btn').onclick=()=>supabaseClient?.auth.signOut();
+  });
+}
+function escAuth(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+
 /* V1 — estructura preparada para crecer: ficha base + especificaciones por categoría. */
 const products = [
   {id:1, name:"Vruna", slug:"vruna", brand:"Nihm", sku:"NIHM-VRUNA", collection:"—", designer:"—", manufacturer:"Nihm", year:"—", category:"Mobiliario", subcategory:"Silla", description:"Silla de líneas contemporáneas para proyectos de interiorismo.", images:["Foto principal","Vista lateral","Detalle material"], variants:["Natural"], materials:["Madera"], construction:"Madera", finish:["Madera natural"], surfaceTexture:"Lisa", colors:["Natural"], dimensions:{width:"—",height:"—",depth:"—"}, style:["Contemporáneo"], applications:["Residencial","Comercial"], indoorOutdoor:"Interior", price:null, currency:"PEN", priceLastUpdated:"—", availability:"Consultar", leadTime:"—", minimumOrder:"—", warranty:"—", countryOfOrigin:"Perú", certifications:[], maintenance:"—", files:{CAD:[],SKP:[],RVT:[],BIM:["3D"],textures:[],PDF:[]}, supplier:{website:"—",contact:"—",showroom:"—"}, sample:{available:false,size:"—"}, tone1:"#e6dfd3",tone2:"#c8bcaa"},
@@ -85,8 +117,12 @@ function initCommonUI(){
   if($("favoriteCount")) updateCounts();
 }
 
-initCommonUI();
-initIndexPage();
+(async()=>{
+  const ok=await initSupabaseAuth();
+  if(!ok) return;
+  initCommonUI();
+  initIndexPage();
+})();
 
 const categoryDescriptions={
   "mobiliario":"Sillas, mesas, sofás y piezas para equipar espacios.",
@@ -114,6 +150,7 @@ function renderFavoritesPage(){
   const list=products.filter(p=>state.favorites.has(p.id));
   document.title=`Mis favoritos · Catálogo Interiorismo Perú`;
   $("favoriteDescription").textContent=list.length?`${list.length} ${list.length===1?"producto guardado":"productos guardados"}.`:'Todavía no has guardado productos. Explora el catálogo y pulsa ♡ para añadirlos aquí.';
+  if($("favoritesToolbarCount")) $("favoritesToolbarCount").textContent=list.length?`${list.length} guardados`:"Sin guardados";
   grid.innerHTML=list.length?list.map(productCardHTML).join(""):'<div class="favorites-empty"><div class="favorites-empty-icon">♡</div><h2>Aún no tienes favoritos</h2><p>Guarda productos que te interesen para encontrarlos rápidamente después.</p><a class="primary-link" href="index.html#catalogo">Explorar catálogo</a></div>';
   bindProductCards(); updateCounts();
 }
@@ -132,4 +169,4 @@ function renderProductPage(){
   $('pagePrev').onclick=()=>show(gi-1); $('pageNext').onclick=()=>show(gi+1); document.querySelectorAll('[data-page-gallery]').forEach(b=>b.onclick=()=>show(+b.dataset.pageGallery));
   $('pageAdd').onclick=()=>openProjectPicker(p.id); $('pageFav').onclick=()=>{toggleFavorite(p.id);$('pageFav').textContent=state.favorites.has(p.id)?'♥ Guardado':'♡ Guardar';}; $('pageFav').textContent=state.favorites.has(p.id)?'♥ Guardado':'♡ Guardar';
 }
-if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',renderProductPage); else renderProductPage();
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>{ if(supabaseClient) renderProductPage(); }); else if(supabaseClient) renderProductPage();
