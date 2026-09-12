@@ -2,7 +2,9 @@
 let supabaseClient = null;
 let authUser = null;
 const productDbIds = new Map();
+const projectDbIds = new Map();
 let favoritesReady = false;
+let projectsReady = false;
 
 async function initSupabaseAuth(){
   const cfg=window.SUPABASE_CONFIG||{};
@@ -68,6 +70,142 @@ async function initSupabaseFavorites(){
   favoritesReady=true;
   updateCounts();
   refreshCurrentPage();
+  return true;
+}
+
+async function initSupabaseProjects(){
+  if(!supabaseClient || !authUser) return false;
+
+  const localBeforeMigration=Array.isArray(state.projects)?state.projects:[];
+  const migrationKey='ci-projects-migrated-v1';
+
+  if(!localStorage.getItem(migrationKey) && localBeforeMigration.length){
+    for(const localProject of localBeforeMigration){
+      const name=String(localProject?.name||'').trim();
+      if(!name) continue;
+      const {data:created,error}=await supabaseClient.from('projects').insert({
+        name,
+        status:'draft',
+        owner_id:authUser.id
+      }).select('id,name,status,client,location,description,owner_id,created_at,updated_at').single();
+      if(error){
+        console.error(error);
+        toast('No se pudieron migrar todos tus proyectos.');
+        return false;
+      }
+      projectDbIds.set(name.toLowerCase(),created.id);
+
+      const localItems=Array.isArray(localProject.items)?localProject.items:[];
+      const rows=localItems.map(localId=>{
+        const product=products.find(x=>x.id===localId);
+        const dbProductId=product&&productDbIds.get(product.slug);
+        return dbProductId?{
+          project_id:created.id,
+          product_id:dbProductId,
+          quantity:1,
+          unit:'und.',
+          waste_percent:0,
+          calculated_quantity:1,
+          purchase_unit:'und.',
+          purchase_factor:1,
+          purchase_quantity:1,
+          added_by:authUser.id
+        }:null;
+      }).filter(Boolean);
+      if(rows.length){
+        const {error:itemError}=await supabaseClient.from('project_items').insert(rows);
+        if(itemError) console.warn('No se pudieron migrar algunos productos de proyectos:',itemError);
+      }
+    }
+    localStorage.setItem(migrationKey,'1');
+  } else if(!localStorage.getItem(migrationKey)){
+    localStorage.setItem(migrationKey,'1');
+  }
+
+  const {data:remote,error:projectError}=await supabaseClient
+    .from('projects')
+    .select('id,name,status,client,location,description,owner_id,created_at,updated_at')
+    .eq('owner_id',authUser.id)
+    .order('created_at',{ascending:false});
+  if(projectError){
+    console.error(projectError);
+    toast('No se pudieron cargar tus proyectos.');
+    return false;
+  }
+
+  projectDbIds.clear();
+  (remote||[]).forEach(project=>projectDbIds.set(project.name.toLowerCase(),project.id));
+
+  const dbProjectIds=(remote||[]).map(project=>project.id);
+  let itemsByProject=new Map();
+  if(dbProjectIds.length){
+    const {data:itemRows,error:itemError}=await supabaseClient
+      .from('project_items')
+      .select('project_id,product_id')
+      .in('project_id',dbProjectIds);
+    if(itemError){
+      console.warn('No se pudieron cargar los productos de proyectos:',itemError);
+    } else {
+      const dbToLocal=new Map(products.map(product=>[productDbIds.get(product.slug),product.id]));
+      (itemRows||[]).forEach(row=>{
+        if(!itemsByProject.has(row.project_id)) itemsByProject.set(row.project_id,[]);
+        const localId=dbToLocal.get(row.product_id);
+        if(localId!=null) itemsByProject.get(row.project_id).push(localId);
+      });
+    }
+  }
+
+  state.projects=(remote||[]).map(project=>({
+    id:project.id,
+    name:project.name,
+    items:[...new Set(itemsByProject.get(project.id)||[])],
+    client:project.client||'',
+    location:project.location||'',
+    description:project.description||'',
+    status:project.status||'draft',
+    createdAt:project.created_at
+  }));
+  save();
+  projectsReady=true;
+  updateCounts();
+  renderProjects();
+  return true;
+}
+
+async function createProject(name){
+  const cleanName=String(name||'').trim();
+  if(!cleanName) return false;
+  if(!supabaseClient || !authUser) return false;
+  if(state.projects.some(project=>project.name.toLowerCase()===cleanName.toLowerCase())){
+    toast('Ese proyecto ya existe');
+    return false;
+  }
+  const {data,error}=await supabaseClient.from('projects').insert({
+    name:cleanName,
+    status:'draft',
+    owner_id:authUser.id
+  }).select('id,name,status,client,location,description,owner_id,created_at,updated_at').single();
+  if(error){
+    console.error(error);
+    toast('No se pudo crear el proyecto');
+    return false;
+  }
+  const project={
+    id:data.id,
+    name:data.name,
+    items:[],
+    client:data.client||'',
+    location:data.location||'',
+    description:data.description||'',
+    status:data.status||'draft',
+    createdAt:data.created_at
+  };
+  state.projects.unshift(project);
+  projectDbIds.set(cleanName.toLowerCase(),data.id);
+  save();
+  updateCounts();
+  renderProjects();
+  toast('Proyecto creado');
   return true;
 }
 
@@ -169,7 +307,7 @@ let pendingProductId=null;function openProjectPicker(id){pendingProductId=id;con
 function closeProjectPicker(){$("projectPicker").classList.remove('open');pendingProductId=null}
 function renderBrands(){if(!$('brandList'))return;const brands=[...new Set(products.map(p=>p.brand))].filter(Boolean).sort();$("brandList").innerHTML=brands.map(b=>`<button class="brand-pill" data-brand="${esc(b)}">${esc(b)}</button>`).join("");$("brandCount").textContent=`${brands.length} marcas de muestra`;document.querySelectorAll('[data-brand]').forEach(b=>b.onclick=()=>{const name=b.dataset.brand;$("searchInput").value=name;renderProducts();$("catalogo").scrollIntoView({behavior:'smooth'});toast(`Filtrando: ${name}`)})}
 function initCommonUI(){
-  if($("addProjectBtn")) $("addProjectBtn").onclick=()=>{const name=$("projectNameInput").value.trim();if(!name)return toast("Escribe un nombre para el proyecto");if(state.projects.some(p=>p.name.toLowerCase()===name.toLowerCase()))return toast("Ese proyecto ya existe");state.projects.push({name,items:[],createdAt:new Date().toISOString()});$("projectNameInput").value="";save();updateCounts();renderProjects();toast("Proyecto creado")};
+  if($("addProjectBtn")) $("addProjectBtn").onclick=async()=>{const name=$("projectNameInput").value.trim();if(!name)return toast("Escribe un nombre para el proyecto");const created=await createProject(name);if(created) $("projectNameInput").value="";};
   if($("projectsBtn")) $("projectsBtn").onclick=openDrawer;
   if($("drawerBackdrop")) $("drawerBackdrop").onclick=closeDrawer;
   if($("visualSearchBtn")) $("visualSearchBtn").onclick=()=>toast("Búsqueda visual: la conectaremos después de cargar imágenes reales");
@@ -184,6 +322,7 @@ function initCommonUI(){
   if(!ok) return;
   initCommonUI();
   await initSupabaseFavorites();
+  await initSupabaseProjects();
   initIndexPage();
   refreshCurrentPage();
 })();
