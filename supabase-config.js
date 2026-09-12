@@ -3,5 +3,5 @@
 // Nunca pongas aquí una clave sb_secret_...
 window.SUPABASE_CONFIG = {
   url: 'https://mroggqoqfbwietzkjjuv.supabase.co',
-  publishableKey: 'PEGA_AQUI_TU_SB_PUBLISHABLE_KEY'
+  publishableKey: 'sb_publishable_8czeBKl2COwZAvoVXeTukg_Zd3XTz8-'
 };
