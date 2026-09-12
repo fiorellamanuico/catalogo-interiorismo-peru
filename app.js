@@ -257,15 +257,78 @@ function renderProjectPage(){
   }
   const items=projectItemsFor(project);
   document.title=`${project.name} · Proyecto | Catálogo Interiorismo Perú`;
-  const totalCalculated=items.reduce((sum,item)=>sum+(Number(item.purchase_quantity ?? item.calculated_quantity ?? item.quantity)||0),0);
+  const totalCalculated=items.reduce((sum,item)=>sum+(Number(item.calculated_quantity ?? item.quantity)||0),0);
+  const avgWaste=items.length?(items.reduce((s,i)=>s+(Number(i.waste_percent)||0),0)/items.length):0;
   mount.innerHTML=`<div class="project-page-wrap">
+    <style>
+      .project-edit-note{font-size:10px;color:#888;margin:8px 0 18px}
+      .project-product-data .field-wrap{display:flex;flex-direction:column;gap:5px}
+      .project-product-data input,.project-product-data select{width:100%;box-sizing:border-box;border:1px solid var(--line);background:#fff;padding:8px 9px;font:inherit;font-size:11px;color:var(--ink);outline:none}
+      .project-product-data input:focus,.project-product-data select:focus{border-color:#777}
+      .project-product-data input[type=number]{appearance:textfield}
+      .project-product-data input[type=number]::-webkit-inner-spin-button,.project-product-data input[type=number]::-webkit-outer-spin-button{appearance:none;margin:0}
+      .project-save-state{font-size:9px;color:#888;min-height:12px;margin-top:4px}
+      .project-product-main{min-width:0}
+      .project-product-main h3{cursor:pointer}
+      @media(max-width:850px){.project-product-data .field-wrap{min-width:0}}
+    </style>
     <div class="project-page-top"><a class="back-link" href="index.html">← Volver al catálogo</a><button class="project-top-action" id="projectAddProduct">＋ Agregar producto</button></div>
     <div class="project-page-heading"><div><p class="eyebrow">PROYECTO</p><h1>${esc(project.name)}</h1><p class="project-meta">${items.length} ${items.length===1?'producto':'productos'} · Cantidad calculada: ${Number(totalCalculated.toFixed(3))}</p></div><span class="project-status">${esc(project.status||'draft')}</span></div>
-    <div class="project-summary"><div><span>PRODUCTOS</span><strong>${items.length}</strong></div><div><span>CANTIDAD CALCULADA</span><strong>${Number(totalCalculated.toFixed(3))}</strong></div><div><span>MERMA</span><strong>${items.length?Number((items.reduce((s,i)=>s+(Number(i.waste_percent)||0),0)/items.length).toFixed(1)):0}% promedio</strong></div><div><span>COTIZACIONES</span><strong>${items.filter(i=>i.quote_status&&i.quote_status!=='pending').length}</strong></div></div>
-    <section class="project-products-section"><div class="project-section-heading"><div><p class="eyebrow">ESPECIFICACIÓN</p><h2>Productos del proyecto</h2></div><span>${items.length} ${items.length===1?'producto':'productos'}</span></div>
-    ${items.length?`<div class="project-products-list">${items.map((item,index)=>{const x=productFromDbId(item.product_id);const productHref=x?`producto.html?slug=${encodeURIComponent(x.slug)}`:'#';const calc=item.purchase_quantity!=null?item.purchase_quantity:item.calculated_quantity!=null?item.calculated_quantity:item.quantity;return `<article class="project-product-row"><a class="project-product-main" href="${productHref}"><div class="project-product-index">${String(index+1).padStart(2,'0')}</div><div><h3>${x?esc(x.name):'Producto'}</h3><p>${x?esc(x.brand):'Producto del catálogo'}</p></div></a><div class="project-product-data"><div><span>AMBIENTE</span><strong>${esc(item.room||'Sin definir')}</strong></div><div><span>CANTIDAD</span><strong>${Number(item.quantity)||0} ${esc(item.unit||'')}</strong></div><div><span>MERMA</span><strong>${Number(item.waste_percent)||0}%</strong></div><div><span>A COMPRAR</span><strong>${calc!=null?esc(String(calc)):'—'} ${esc(item.purchase_unit||item.unit||'')}</strong></div></div></article>`}).join('')}</div>`:'<div class="project-empty"><h3>Este proyecto todavía no tiene productos.</h3><p>Agrega productos desde cualquier ficha del catálogo.</p><button class="primary" id="projectAddEmpty">＋ Agregar producto</button></div>'}
+    <div class="project-summary"><div><span>PRODUCTOS</span><strong>${items.length}</strong></div><div><span>CANTIDAD CALCULADA</span><strong>${Number(totalCalculated.toFixed(3))}</strong></div><div><span>MERMA</span><strong>${Number(avgWaste.toFixed(1))}% promedio</strong></div><div><span>COTIZACIONES</span><strong>${items.filter(i=>i.quote_status&&i.quote_status!=='pending').length}</strong></div></div>
+    <section class="project-products-section"><div class="project-section-heading"><div><p class="eyebrow">ESPECIFICACIÓN</p><h2>Productos del proyecto</h2><p class="project-edit-note">Puedes editar ambiente, cantidad, unidad y merma. Los cambios se guardan automáticamente.</p></div><span>${items.length} ${items.length===1?'producto':'productos'}</span></div>
+    ${items.length?`<div class="project-products-list">${items.map((item,index)=>{
+      const x=productFromDbId(item.product_id);
+      const productHref=x?`producto.html?slug=${encodeURIComponent(x.slug)}`:'#';
+      const calc=item.purchase_quantity!=null?item.purchase_quantity:item.calculated_quantity!=null?item.calculated_quantity:item.quantity;
+      const room=item.room||'';
+      const qty=Number(item.quantity)||0;
+      const waste=Number(item.waste_percent)||0;
+      const unit=item.unit||'und.';
+      return `<article class="project-product-row" data-item-id="${esc(item.id)}">
+        <a class="project-product-main" href="${productHref}"><div class="project-product-index">${String(index+1).padStart(2,'0')}</div><div><h3>${x?esc(x.name):'Producto'}</h3><p>${x?esc(x.brand):'Producto del catálogo'}</p></div></a>
+        <div class="project-product-data">
+          <div class="field-wrap"><span>AMBIENTE</span><input data-item-field="room" type="text" value="${esc(room)}" placeholder="Ej. Comedor"><small class="project-save-state" data-save-state></small></div>
+          <div class="field-wrap"><span>CANTIDAD</span><input data-item-field="quantity" type="number" min="0" step="0.001" value="${qty}"><small class="project-save-state" data-save-state></small></div>
+          <div class="field-wrap"><span>UNIDAD</span><select data-item-field="unit">${['und.','m²','m','ml','kg','g','l','set'].map(u=>`<option value="${u}" ${u===unit?'selected':''}>${u}</option>`).join('')}</select><small class="project-save-state" data-save-state></small></div>
+          <div class="field-wrap"><span>MERMA %</span><input data-item-field="waste_percent" type="number" min="0" step="0.1" value="${waste}"><small class="project-save-state" data-save-state></small></div>
+          <div class="field-wrap" style="grid-column:1/-1"><span>A COMPRAR</span><strong data-calculated>${calc!=null?esc(String(calc)):'—'} ${esc(item.purchase_unit||unit)}</strong><small class="project-save-state" data-calc-state>Se calcula según la configuración de compra.</small></div>
+        </div>
+      </article>`;
+    }).join('')}</div>`:'<div class="project-empty"><h3>Este proyecto todavía no tiene productos.</h3><p>Agrega productos desde cualquier ficha del catálogo.</p><button class="primary" id="projectAddEmpty">＋ Agregar producto</button></div>'}
     </section>
   </div>`;
+
+  const saveField=async(input)=>{
+    const row=input.closest('[data-item-id]');
+    const itemId=row?.dataset.itemId;
+    const item=items.find(i=>String(i.id)===String(itemId));
+    const field=input.dataset.itemField;
+    if(!item||!field) return;
+    let value=input.value;
+    if(field==='quantity'||field==='waste_percent') value=Number(value);
+    if(field==='room' && value.trim()==='') value=null;
+    const stateEl=input.parentElement.querySelector('[data-save-state]');
+    if(stateEl) stateEl.textContent='Guardando…';
+    input.disabled=true;
+    try{
+      const {data,error}=await supabaseClient.from('project_items').update({[field]:value}).eq('id',item.id).select('id,project_id,product_id,room,quantity,unit,waste_percent,calculated_quantity,purchase_unit,purchase_factor,purchase_quantity,price,currency,supplier_name,quote_status,notes,added_by,created_at,updated_at').single();
+      if(error) throw error;
+      Object.assign(item,data);
+      if(stateEl) stateEl.textContent='Guardado ✓';
+      renderProjectPage();
+      toast('Cambio guardado');
+    }catch(error){
+      console.error(error);
+      if(stateEl) stateEl.textContent='No se pudo guardar';
+      toast('No se pudo guardar el cambio.');
+      renderProjectPage();
+    }finally{input.disabled=false;}
+  };
+
+  mount.querySelectorAll('[data-item-field]').forEach(input=>{
+    const event=input.tagName==='SELECT'?'change':'blur';
+    input.addEventListener(event,()=>saveField(input));
+  });
   $('projectAddProduct')?.addEventListener('click',()=>{ location.href='index.html'; });
   $('projectAddEmpty')?.addEventListener('click',()=>{ location.href='index.html'; });
 }
