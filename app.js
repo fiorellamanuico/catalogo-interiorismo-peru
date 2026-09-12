@@ -136,6 +136,7 @@ function refreshCurrentPage(){
   if($('favoritesProductGrid')) renderFavoritesPage();
   if($('categoryProductGrid')) renderCategoryPage();
   if($('productPage')) renderProductPage();
+  if($('projectPage')) renderProjectPage();
 }
 
 /* V1 — estructura preparada para crecer: ficha base + especificaciones por categoría. */
@@ -232,35 +233,43 @@ function renderProjects(){
   const inputWrap=$('projectNameInput')?.parentElement;
   if(inputWrap) inputWrap.style.display='flex';
   if(!state.projects.length){
-    list.innerHTML='<div class="empty">Todavía no tienes proyectos.<br>Créelos arriba y luego guarda productos dentro de ellos.</div>';
+    list.innerHTML='<div class="empty">Todavía no tienes proyectos.</div>';
     return;
   }
   list.innerHTML=state.projects.map(p=>{
     const items=projectItemsFor(p);
-    return `<article class="project-card" data-project-id="${esc(p.id)}" style="cursor:pointer"><div class="project-title"><strong>${esc(p.name)}</strong><span class="project-count">${items.length} ${items.length===1?'producto':'productos'}</span></div>${items.length?`<div class="project-items">${items.slice(0,6).map(item=>{const x=productFromDbId(item.product_id);return `<div class="mini-item">${x?esc(x.name):'Producto'}</div>`}).join('')}</div>`:'<div class="empty">Sin productos todavía.</div>'}<div style="margin-top:12px;font-size:10px;color:#777">Ver proyecto →</div></article>`;
+    return `<article class="project-card" data-project-id="${esc(p.id)}" style="cursor:pointer"><div class="project-title"><strong>${esc(p.name)}</strong><span class="project-count">${items.length} ${items.length===1?'producto':'productos'}</span></div>${items.length?`<div class="project-items">${items.slice(0,6).map(item=>{const x=productFromDbId(item.product_id);return `<div class="mini-item">${x?esc(x.name):'Producto'}</div>`}).join('')}</div>`:'<div class="empty">Sin productos todavía.</div>'}<div style="margin-top:12px;font-size:10px;color:#777">Abrir proyecto →</div></article>`;
   }).join('');
-  list.querySelectorAll('[data-project-id]').forEach(card=>card.onclick=()=>openProjectDetail(card.dataset.projectId));
+  list.querySelectorAll('[data-project-id]').forEach(card=>card.onclick=()=>{
+    window.location.href=`proyecto.html?id=${encodeURIComponent(card.dataset.projectId)}`;
+  });
 }
-function openProjectDetail(projectId){
+
+function renderProjectPage(){
+  const mount=$('projectPage');
+  if(!mount || !projectsReady) return;
+  const projectId=new URLSearchParams(location.search).get('id');
   const project=state.projects.find(p=>String(p.id)===String(projectId));
-  const list=$('projectList');
-  if(!project||!list)return;
-  const inputWrap=$('projectNameInput')?.parentElement;
-  if(inputWrap) inputWrap.style.display='none';
+  if(!project){
+    document.title='Proyecto no encontrado · Catálogo Interiorismo Perú';
+    mount.innerHTML=`<div class="project-page-wrap"><a class="back-link" href="index.html">← Volver al catálogo</a><p class="eyebrow">PROYECTO</p><h1>Proyecto no encontrado</h1><p class="page-description">El proyecto que buscas no existe o no tienes acceso.</p><a class="primary-link" href="index.html">Volver al catálogo</a></div>`;
+    return;
+  }
   const items=projectItemsFor(project);
-  const totalUnits=items.reduce((sum,item)=>sum+(Number(item.calculated_quantity)||0),0);
-  list.innerHTML=`<div class="project-detail-view">
-    <button type="button" id="backToProjects" style="border:0;background:transparent;padding:0;margin:0 0 18px;font-size:11px;color:#777">← Volver a proyectos</button>
-    <p class="eyebrow">PROYECTO</p>
-    <h3 style="font-size:30px;font-weight:500;letter-spacing:-.04em;margin:0 0 7px">${esc(project.name)}</h3>
-    <p style="font-size:11px;color:#888;margin:0 0 24px">${items.length} ${items.length===1?'producto':'productos'} · Cantidad calculada: ${totalUnits}</p>
-    ${items.length?`<div class="project-detail-items">${items.map((item,index)=>{const x=productFromDbId(item.product_id);const localId=x?.id;return `<article class="project-detail-item" data-product-local="${localId??''}" style="background:#fff;border:1px solid var(--line);padding:13px;margin-bottom:8px;cursor:${localId!=null?'pointer':'default'}"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start"><div><strong style="font-size:13px">${x?esc(x.name):'Producto'}</strong><div style="font-size:10px;color:#888;margin-top:4px">${x?esc(x.brand):''}</div></div><span style="font-size:9px;color:#999">#${index+1}</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:11px;font-size:9px;color:#777"><span>Ambiente: <b style="color:#333">${esc(item.room||'Sin definir')}</b></span><span>Cantidad: <b style="color:#333">${Number(item.quantity)||0} ${esc(item.unit||'')}</b></span><span>Merma: <b style="color:#333">${Number(item.waste_percent)||0}%</b></span><span>A comprar: <b style="color:#333">${item.purchase_quantity!=null?esc(String(item.purchase_quantity)):item.calculated_quantity!=null?esc(String(item.calculated_quantity)):'—'} ${esc(item.purchase_unit||item.unit||'')}</b></span></div></article>`}).join('')}</div>`:'<div class="empty" style="padding:35px 10px">Este proyecto todavía no tiene productos.</div>'}
+  document.title=`${project.name} · Proyecto | Catálogo Interiorismo Perú`;
+  const totalCalculated=items.reduce((sum,item)=>sum+(Number(item.purchase_quantity ?? item.calculated_quantity ?? item.quantity)||0),0);
+  mount.innerHTML=`<div class="project-page-wrap">
+    <div class="project-page-top"><a class="back-link" href="index.html">← Volver al catálogo</a><button class="project-top-action" id="projectAddProduct">＋ Agregar producto</button></div>
+    <div class="project-page-heading"><div><p class="eyebrow">PROYECTO</p><h1>${esc(project.name)}</h1><p class="project-meta">${items.length} ${items.length===1?'producto':'productos'} · Cantidad calculada: ${Number(totalCalculated.toFixed(3))}</p></div><span class="project-status">${esc(project.status||'draft')}</span></div>
+    <div class="project-summary"><div><span>PRODUCTOS</span><strong>${items.length}</strong></div><div><span>CANTIDAD CALCULADA</span><strong>${Number(totalCalculated.toFixed(3))}</strong></div><div><span>MERMA</span><strong>${items.length?Number((items.reduce((s,i)=>s+(Number(i.waste_percent)||0),0)/items.length).toFixed(1)):0}% promedio</strong></div><div><span>COTIZACIONES</span><strong>${items.filter(i=>i.quote_status&&i.quote_status!=='pending').length}</strong></div></div>
+    <section class="project-products-section"><div class="project-section-heading"><div><p class="eyebrow">ESPECIFICACIÓN</p><h2>Productos del proyecto</h2></div><span>${items.length} ${items.length===1?'producto':'productos'}</span></div>
+    ${items.length?`<div class="project-products-list">${items.map((item,index)=>{const x=productFromDbId(item.product_id);const productHref=x?`producto.html?slug=${encodeURIComponent(x.slug)}`:'#';const calc=item.purchase_quantity!=null?item.purchase_quantity:item.calculated_quantity!=null?item.calculated_quantity:item.quantity;return `<article class="project-product-row"><a class="project-product-main" href="${productHref}"><div class="project-product-index">${String(index+1).padStart(2,'0')}</div><div><h3>${x?esc(x.name):'Producto'}</h3><p>${x?esc(x.brand):'Producto del catálogo'}</p></div></a><div class="project-product-data"><div><span>AMBIENTE</span><strong>${esc(item.room||'Sin definir')}</strong></div><div><span>CANTIDAD</span><strong>${Number(item.quantity)||0} ${esc(item.unit||'')}</strong></div><div><span>MERMA</span><strong>${Number(item.waste_percent)||0}%</strong></div><div><span>A COMPRAR</span><strong>${calc!=null?esc(String(calc)):'—'} ${esc(item.purchase_unit||item.unit||'')}</strong></div></div></article>`}).join('')}</div>`:'<div class="project-empty"><h3>Este proyecto todavía no tiene productos.</h3><p>Agrega productos desde cualquier ficha del catálogo.</p><button class="primary" id="projectAddEmpty">＋ Agregar producto</button></div>'}
+    </section>
   </div>`;
-  const back=$('backToProjects');
-  if(back) back.onclick=renderProjects;
-  list.querySelectorAll('[data-product-local]').forEach(card=>{const id=Number(card.dataset.productLocal);if(id)card.onclick=()=>{openProduct(id);closeDrawer();}});
+  $('projectAddProduct')?.addEventListener('click',()=>{ location.href='index.html'; });
+  $('projectAddEmpty')?.addEventListener('click',()=>{ location.href='index.html'; });
 }
-let pendingProductId=null;
+
 async function openProjectPicker(id){
   pendingProductId=id;
   const p=products.find(x=>x.id===id);
@@ -368,4 +377,4 @@ function renderProductPage(){
   $('pagePrev').onclick=()=>show(gi-1); $('pageNext').onclick=()=>show(gi+1); document.querySelectorAll('[data-page-gallery]').forEach(b=>b.onclick=()=>show(+b.dataset.pageGallery));
   $('pageAdd').onclick=()=>openProjectPicker(p.id); $('pageFav').onclick=()=>{toggleFavorite(p.id);$('pageFav').textContent=state.favorites.has(p.id)?'♥ Guardado':'♡ Guardar';}; $('pageFav').textContent=state.favorites.has(p.id)?'♥ Guardado':'♡ Guardar';
 }
-if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>{ if(supabaseClient) renderProductPage(); }); else if(supabaseClient) renderProductPage();
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>{ if(supabaseClient){ renderProductPage(); renderProjectPage(); } }); else if(supabaseClient){ renderProductPage(); renderProjectPage(); }

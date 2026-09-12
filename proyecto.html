@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Proyecto · Catálogo Interiorismo Perú</title>
+<meta name="description" content="Detalle de proyecto de interiorismo y productos especificados.">
+<link rel="stylesheet" href="style.css">
+<style>
+.project-page-wrap{max-width:1240px;margin:0 auto;padding:48px 6vw 100px}.project-page-top{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:38px}.project-top-action{border:1px solid var(--line);background:var(--ink);color:#fff;padding:12px 16px;font-size:11px}.project-page-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:30px;border-bottom:1px solid var(--line);padding-bottom:28px}.project-page-heading h1{font-size:72px;line-height:.95;font-weight:500;letter-spacing:-.055em;margin:5px 0 12px}.project-meta{color:#777;font-size:12px}.project-status{font-size:10px;text-transform:uppercase;letter-spacing:.12em;border:1px solid var(--line);padding:9px 12px;background:#fff}.project-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin:28px 0 55px}.project-summary>div{background:#fff;padding:20px}.project-summary span,.project-product-data span{display:block;font-size:8px;letter-spacing:.12em;color:#888;margin-bottom:8px}.project-summary strong{font-size:22px;font-weight:500}.project-section-heading{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:18px}.project-section-heading h2{font-size:32px;font-weight:500;letter-spacing:-.035em;margin:4px 0 0}.project-section-heading>span{font-size:10px;color:#888}.project-products-list{border-top:1px solid var(--line)}.project-product-row{display:grid;grid-template-columns:minmax(280px,1fr) minmax(480px,1.25fr);gap:30px;align-items:center;border-bottom:1px solid var(--line);padding:24px 0}.project-product-main{display:flex;align-items:center;gap:18px;text-decoration:none;color:inherit}.project-product-index{font-size:10px;color:#999;width:28px}.project-product-main h3{font-size:19px;font-weight:500;margin:0 0 5px}.project-product-main p{font-size:10px;color:#888;margin:0}.project-product-data{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}.project-product-data strong{font-size:11px;font-weight:500}.project-empty{text-align:center;border:1px solid var(--line);background:#fff;padding:65px 25px}.project-empty h3{font-size:22px;font-weight:500;margin:0 0 8px}.project-empty p{font-size:12px;color:#888;margin:0 0 20px}.primary-link{display:inline-block;background:var(--ink);color:#fff;padding:12px 15px;text-decoration:none;font-size:11px}.project-page-wrap .back-link{margin-bottom:0}
+@media(max-width:850px){.project-page-wrap{padding:30px 5vw 70px}.project-page-top{align-items:flex-start}.project-page-heading{display:block}.project-page-heading h1{font-size:52px}.project-status{display:inline-block;margin-top:15px}.project-summary{grid-template-columns:1fr 1fr;margin-bottom:40px}.project-product-row{grid-template-columns:1fr;gap:18px}.project-product-data{grid-template-columns:1fr 1fr}.project-top-action{white-space:nowrap}}
+@media(max-width:520px){.project-page-heading h1{font-size:44px}.project-summary{grid-template-columns:1fr}.project-product-data{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header class="site-header">
+<a class="brand" href="index.html"><span class="brand-mark">CI</span><span><strong>Catálogo</strong><small>Interiorismo Perú</small></span></a>
+<nav><a href="index.html#catalogo">Catálogo</a><a href="index.html#marcas">Marcas</a><a href="index.html" class="nav-btn">Proyectos</a><a href="favoritos.html" class="nav-btn">♡ Favoritos <b id="favoriteCount">0</b></a></nav>
+</header>
+<main><div id="projectPage"></div></main>
+<div class="modal project-picker-modal" id="projectPicker" aria-hidden="true"><div class="picker-card"><button class="close-btn" onclick="closeProjectPicker()">×</button><div id="projectPickerContent"></div></div></div>
+<div class="toast" id="toast"></div>
+<footer><span>Catálogo Interiorismo Perú · V1.2</span><span>Biblioteca personal de especificación</span></footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-config.js"></script><script src="app.js"></script>
+</body>
+</html>
