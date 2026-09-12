@@ -2,9 +2,9 @@
 let supabaseClient = null;
 let authUser = null;
 const productDbIds = new Map();
-const projectDbIds = new Map();
 let favoritesReady = false;
 let projectsReady = false;
+const projectDbItems = new Map();
 
 async function initSupabaseAuth(){
   const cfg=window.SUPABASE_CONFIG||{};
@@ -73,139 +73,61 @@ async function initSupabaseFavorites(){
   return true;
 }
 
+
 async function initSupabaseProjects(){
   if(!supabaseClient || !authUser) return false;
-
-  const localBeforeMigration=Array.isArray(state.projects)?state.projects:[];
-  const migrationKey='ci-projects-migrated-v1';
-
-  if(!localStorage.getItem(migrationKey) && localBeforeMigration.length){
-    for(const localProject of localBeforeMigration){
-      const name=String(localProject?.name||'').trim();
-      if(!name) continue;
-      const {data:created,error}=await supabaseClient.from('projects').insert({
-        name,
-        status:'draft',
-        owner_id:authUser.id
-      }).select('id,name,status,client,location,description,owner_id,created_at,updated_at').single();
-      if(error){
-        console.error(error);
-        toast('No se pudieron migrar todos tus proyectos.');
-        return false;
-      }
-      projectDbIds.set(name.toLowerCase(),created.id);
-
-      const localItems=Array.isArray(localProject.items)?localProject.items:[];
-      const rows=localItems.map(localId=>{
-        const product=products.find(x=>x.id===localId);
-        const dbProductId=product&&productDbIds.get(product.slug);
-        return dbProductId?{
-          project_id:created.id,
-          product_id:dbProductId,
-          quantity:1,
-          unit:'und.',
-          waste_percent:0,
-          calculated_quantity:1,
-          purchase_unit:'und.',
-          purchase_factor:1,
-          purchase_quantity:1,
-          added_by:authUser.id
-        }:null;
-      }).filter(Boolean);
-      if(rows.length){
-        const {error:itemError}=await supabaseClient.from('project_items').insert(rows);
-        if(itemError) console.warn('No se pudieron migrar algunos productos de proyectos:',itemError);
-      }
-    }
-    localStorage.setItem(migrationKey,'1');
-  } else if(!localStorage.getItem(migrationKey)){
-    localStorage.setItem(migrationKey,'1');
-  }
-
-  const {data:remote,error:projectError}=await supabaseClient
+  const {data:dbProjects,error:projectError}=await supabaseClient
     .from('projects')
-    .select('id,name,status,client,location,description,owner_id,created_at,updated_at')
+    .select('id,name,client,location,description,status,owner_id,created_at,updated_at')
     .eq('owner_id',authUser.id)
-    .order('created_at',{ascending:false});
+    .order('created_at',{ascending:true});
   if(projectError){
     console.error(projectError);
     toast('No se pudieron cargar tus proyectos.');
     return false;
   }
 
-  projectDbIds.clear();
-  (remote||[]).forEach(project=>projectDbIds.set(project.name.toLowerCase(),project.id));
-
-  const dbProjectIds=(remote||[]).map(project=>project.id);
-  let itemsByProject=new Map();
-  if(dbProjectIds.length){
-    const {data:itemRows,error:itemError}=await supabaseClient
+  const projectIds=(dbProjects||[]).map(p=>p.id);
+  let dbItems=[];
+  if(projectIds.length){
+    const {data:items,error:itemError}=await supabaseClient
       .from('project_items')
-      .select('project_id,product_id')
-      .in('project_id',dbProjectIds);
+      .select('id,project_id,product_id,room,quantity,unit,waste_percent,calculated_quantity,purchase_unit,purchase_factor,purchase_quantity,price,currency,supplier_name,quote_status,notes,added_by,created_at,updated_at')
+      .in('project_id',projectIds)
+      .order('created_at',{ascending:true});
     if(itemError){
-      console.warn('No se pudieron cargar los productos de proyectos:',itemError);
-    } else {
-      const dbToLocal=new Map(products.map(product=>[productDbIds.get(product.slug),product.id]));
-      (itemRows||[]).forEach(row=>{
-        if(!itemsByProject.has(row.project_id)) itemsByProject.set(row.project_id,[]);
-        const localId=dbToLocal.get(row.product_id);
-        if(localId!=null) itemsByProject.get(row.project_id).push(localId);
-      });
+      console.error(itemError);
+      toast('No se pudieron cargar los productos de tus proyectos.');
+      return false;
     }
+    dbItems=items||[];
   }
 
-  state.projects=(remote||[]).map(project=>({
-    id:project.id,
-    name:project.name,
-    items:[...new Set(itemsByProject.get(project.id)||[])],
-    client:project.client||'',
-    location:project.location||'',
-    description:project.description||'',
-    status:project.status||'draft',
-    createdAt:project.created_at
+  projectDbItems.clear();
+  const dbToLocal=new Map(products.map(p=>[productDbIds.get(p.slug),p.id]));
+  (dbItems||[]).forEach(item=>{
+    const localId=dbToLocal.get(item.product_id);
+    if(localId!=null){
+      if(!projectDbItems.has(item.project_id)) projectDbItems.set(item.project_id,[]);
+      projectDbItems.get(item.project_id).push(item);
+    }
+  });
+
+  state.projects=(dbProjects||[]).map(row=>({
+    id:row.id,
+    name:row.name,
+    client:row.client||'',
+    location:row.location||'',
+    description:row.description||'',
+    status:row.status||'draft',
+    createdAt:row.created_at,
+    updatedAt:row.updated_at,
+    items:(projectDbItems.get(row.id)||[]).map(item=>dbToLocal.get(item.product_id)).filter(id=>id!=null)
   }));
   save();
   projectsReady=true;
   updateCounts();
-  renderProjects();
-  return true;
-}
-
-async function createProject(name){
-  const cleanName=String(name||'').trim();
-  if(!cleanName) return false;
-  if(!supabaseClient || !authUser) return false;
-  if(state.projects.some(project=>project.name.toLowerCase()===cleanName.toLowerCase())){
-    toast('Ese proyecto ya existe');
-    return false;
-  }
-  const {data,error}=await supabaseClient.from('projects').insert({
-    name:cleanName,
-    status:'draft',
-    owner_id:authUser.id
-  }).select('id,name,status,client,location,description,owner_id,created_at,updated_at').single();
-  if(error){
-    console.error(error);
-    toast('No se pudo crear el proyecto');
-    return false;
-  }
-  const project={
-    id:data.id,
-    name:data.name,
-    items:[],
-    client:data.client||'',
-    location:data.location||'',
-    description:data.description||'',
-    status:data.status||'draft',
-    createdAt:data.created_at
-  };
-  state.projects.unshift(project);
-  projectDbIds.set(cleanName.toLowerCase(),data.id);
-  save();
-  updateCounts();
-  renderProjects();
-  toast('Proyecto creado');
+  refreshCurrentPage();
   return true;
 }
 
@@ -302,12 +224,63 @@ async function toggleFavorite(id){
   }
 }
 function openDrawer(){if(!$('projectDrawer'))return;$("projectDrawer").classList.add("open");$("drawerBackdrop").classList.add("open");renderProjects()};function closeDrawer(){if(!$('projectDrawer'))return;$("projectDrawer").classList.remove("open");$("drawerBackdrop").classList.remove("open")}
-function renderProjects(){const list=$("projectList");if(!state.projects.length){list.innerHTML='<div class="empty">Todavía no tienes proyectos.<br>Créelos arriba y luego guarda productos dentro de ellos.</div>';return}list.innerHTML=state.projects.map((p,i)=>`<article class="project-card"><div class="project-title"><strong>${esc(p.name)}</strong><span class="project-count">${p.items.length} productos</span></div>${p.items.length?`<div class="project-items">${p.items.map(id=>{const x=products.find(z=>z.id===id);return `<div class="mini-item">${x?esc(x.name):"Producto"}</div>`}).join("")}</div>`:'<div class="empty">Sin productos todavía.</div>'}</article>`).join("")}
-let pendingProductId=null;function openProjectPicker(id){pendingProductId=id;const p=products.find(x=>x.id===id);$("projectPickerContent").innerHTML=`<div class="picker-head"><p class="eyebrow">GUARDAR PRODUCTO</p><h3>${esc(p.name)}</h3><p>${esc(p.brand)}</p></div><div class="picker-list">${state.projects.length?state.projects.map((project,i)=>`<button class="picker-project" data-project="${i}"><span class="picker-icon">＋</span><span><strong>${esc(project.name)}</strong><small>${project.items.length} productos guardados</small></span><span>›</span></button>`).join(""):'<div class="empty">Todavía no tienes proyectos.</div>'}</div><button class="new-project-inline" id="newProjectInline">＋ Crear nuevo proyecto</button>`;$("projectPicker").classList.add('open');document.querySelectorAll('.picker-project').forEach(b=>b.onclick=()=>{const i=+b.dataset.project;if(!state.projects[i].items.includes(pendingProductId))state.projects[i].items.push(pendingProductId);save();updateCounts();closeProjectPicker();renderProjects();toast(`Añadido a "${state.projects[i].name}"`)});$("newProjectInline").onclick=()=>{closeProjectPicker();openDrawer();$("projectNameInput").focus()}}
-function closeProjectPicker(){$("projectPicker").classList.remove('open');pendingProductId=null}
+function projectItemsFor(project){return projectDbItems.get(project.id)||[]}
+function renderProjects(){
+  const list=$('projectList');
+  if(!list) return;
+  if(!state.projects.length){
+    list.innerHTML='<div class="empty">Todavía no tienes proyectos.<br>Créelos arriba y luego guarda productos dentro de ellos.</div>';
+    return;
+  }
+  list.innerHTML=state.projects.map(p=>{
+    const items=projectItemsFor(p);
+    return `<article class="project-card"><div class="project-title"><strong>${esc(p.name)}</strong><span class="project-count">${items.length} ${items.length===1?'producto':'productos'}</span></div>${items.length?`<div class="project-items">${items.map(item=>{const localId=products.find(x=>productDbIds.get(x.slug)===item.product_id)?.id;const x=products.find(z=>z.id===localId);return `<div class="mini-item">${x?esc(x.name):'Producto'}</div>`}).join('')}</div>`:'<div class="empty">Sin productos todavía.</div>'}</article>`;
+  }).join('');
+}
+let pendingProductId=null;
+async function openProjectPicker(id){
+  pendingProductId=id;
+  const p=products.find(x=>x.id===id);
+  if(!p || !$('projectPickerContent')) return;
+  if(!projectsReady){ toast('Los proyectos todavía se están cargando.'); return; }
+  $('projectPickerContent').innerHTML=`<div class="picker-head"><p class="eyebrow">GUARDAR PRODUCTO</p><h3>${esc(p.name)}</h3><p>${esc(p.brand)}</p></div><div class="picker-list">${state.projects.length?state.projects.map((project,i)=>{const count=projectItemsFor(project).length;return `<button class="picker-project" data-project="${i}"><span class="picker-icon">＋</span><span><strong>${esc(project.name)}</strong><small>${count} ${count===1?'producto guardado':'productos guardados'}</small></span><span>›</span></button>`}).join(''):'<div class="empty">Todavía no tienes proyectos.</div>'}</div><button class="new-project-inline" id="newProjectInline">＋ Crear nuevo proyecto</button>`;
+  $('projectPicker').classList.add('open');
+  document.querySelectorAll('.picker-project').forEach(b=>b.onclick=async()=>{
+    const i=+b.dataset.project;
+    const project=state.projects[i];
+    if(!project) return;
+    const existing=projectItemsFor(project).some(item=>item.product_id===productDbIds.get(p.slug));
+    if(existing){ toast(`“${p.name}” ya está en “${project.name}”`); closeProjectPicker(); return; }
+    const productDbId=productDbIds.get(p.slug);
+    if(!productDbId){ toast('No encontramos este producto en Supabase.'); return; }
+    b.disabled=true;
+    const {data:item,error}=await supabaseClient.from('project_items').insert({
+      project_id:project.id,
+      product_id:productDbId,
+      quantity:1,
+      unit:'und.',
+      waste_percent:0,
+      purchase_unit:'und.',
+      purchase_factor:1
+    }).select('id,project_id,product_id,room,quantity,unit,waste_percent,calculated_quantity,purchase_unit,purchase_factor,purchase_quantity,price,currency,supplier_name,quote_status,notes,added_by,created_at,updated_at').single();
+    if(error){
+      console.error(error);
+      b.disabled=false;
+      toast('No se pudo añadir el producto al proyecto.');
+      return;
+    }
+    if(!projectDbItems.has(project.id)) projectDbItems.set(project.id,[]);
+    projectDbItems.get(project.id).push(item);
+    project.items.push(id);
+    save(); updateCounts(); closeProjectPicker(); renderProjects();
+    toast(`Añadido a “${project.name}”`);
+  });
+  $('newProjectInline').onclick=()=>{closeProjectPicker();openDrawer();$('projectNameInput').focus()};
+}
+function closeProjectPicker(){$('projectPicker').classList.remove('open');pendingProductId=null}
 function renderBrands(){if(!$('brandList'))return;const brands=[...new Set(products.map(p=>p.brand))].filter(Boolean).sort();$("brandList").innerHTML=brands.map(b=>`<button class="brand-pill" data-brand="${esc(b)}">${esc(b)}</button>`).join("");$("brandCount").textContent=`${brands.length} marcas de muestra`;document.querySelectorAll('[data-brand]').forEach(b=>b.onclick=()=>{const name=b.dataset.brand;$("searchInput").value=name;renderProducts();$("catalogo").scrollIntoView({behavior:'smooth'});toast(`Filtrando: ${name}`)})}
 function initCommonUI(){
-  if($("addProjectBtn")) $("addProjectBtn").onclick=async()=>{const name=$("projectNameInput").value.trim();if(!name)return toast("Escribe un nombre para el proyecto");const created=await createProject(name);if(created) $("projectNameInput").value="";};
+  if($("addProjectBtn")) $("addProjectBtn").onclick=async()=>{const name=$("projectNameInput").value.trim();if(!name)return toast("Escribe un nombre para el proyecto");if(state.projects.some(p=>p.name.toLowerCase()===name.toLowerCase()))return toast("Ese proyecto ya existe");if(!supabaseClient||!authUser){toast("La sesión todavía no está lista.");return;}const btn=$("addProjectBtn");btn.disabled=true;const {data:row,error}=await supabaseClient.from('projects').insert({name,owner_id:authUser.id,status:'draft'}).select('id,name,client,location,description,status,owner_id,created_at,updated_at').single();if(error){console.error(error);btn.disabled=false;toast('No se pudo crear el proyecto.');return;}state.projects.push({id:row.id,name:row.name,client:row.client||'',location:row.location||'',description:row.description||'',status:row.status||'draft',createdAt:row.created_at,updatedAt:row.updated_at,items:[]});projectDbItems.set(row.id,[]);$("projectNameInput").value="";btn.disabled=false;save();updateCounts();renderProjects();toast("Proyecto creado")};
   if($("projectsBtn")) $("projectsBtn").onclick=openDrawer;
   if($("drawerBackdrop")) $("drawerBackdrop").onclick=closeDrawer;
   if($("visualSearchBtn")) $("visualSearchBtn").onclick=()=>toast("Búsqueda visual: la conectaremos después de cargar imágenes reales");
