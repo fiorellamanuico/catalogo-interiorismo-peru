@@ -225,17 +225,40 @@ async function toggleFavorite(id){
 }
 function openDrawer(){if(!$('projectDrawer'))return;$("projectDrawer").classList.add("open");$("drawerBackdrop").classList.add("open");renderProjects()};function closeDrawer(){if(!$('projectDrawer'))return;$("projectDrawer").classList.remove("open");$("drawerBackdrop").classList.remove("open")}
 function projectItemsFor(project){return projectDbItems.get(project.id)||[]}
+function productFromDbId(dbId){const match=products.find(x=>productDbIds.get(x.slug)===dbId);return match||null}
 function renderProjects(){
   const list=$('projectList');
   if(!list) return;
+  const inputWrap=$('projectNameInput')?.parentElement;
+  if(inputWrap) inputWrap.style.display='flex';
   if(!state.projects.length){
     list.innerHTML='<div class="empty">Todavía no tienes proyectos.<br>Créelos arriba y luego guarda productos dentro de ellos.</div>';
     return;
   }
   list.innerHTML=state.projects.map(p=>{
     const items=projectItemsFor(p);
-    return `<article class="project-card"><div class="project-title"><strong>${esc(p.name)}</strong><span class="project-count">${items.length} ${items.length===1?'producto':'productos'}</span></div>${items.length?`<div class="project-items">${items.map(item=>{const localId=products.find(x=>productDbIds.get(x.slug)===item.product_id)?.id;const x=products.find(z=>z.id===localId);return `<div class="mini-item">${x?esc(x.name):'Producto'}</div>`}).join('')}</div>`:'<div class="empty">Sin productos todavía.</div>'}</article>`;
+    return `<article class="project-card" data-project-id="${esc(p.id)}" style="cursor:pointer"><div class="project-title"><strong>${esc(p.name)}</strong><span class="project-count">${items.length} ${items.length===1?'producto':'productos'}</span></div>${items.length?`<div class="project-items">${items.slice(0,6).map(item=>{const x=productFromDbId(item.product_id);return `<div class="mini-item">${x?esc(x.name):'Producto'}</div>`}).join('')}</div>`:'<div class="empty">Sin productos todavía.</div>'}<div style="margin-top:12px;font-size:10px;color:#777">Ver proyecto →</div></article>`;
   }).join('');
+  list.querySelectorAll('[data-project-id]').forEach(card=>card.onclick=()=>openProjectDetail(card.dataset.projectId));
+}
+function openProjectDetail(projectId){
+  const project=state.projects.find(p=>String(p.id)===String(projectId));
+  const list=$('projectList');
+  if(!project||!list)return;
+  const inputWrap=$('projectNameInput')?.parentElement;
+  if(inputWrap) inputWrap.style.display='none';
+  const items=projectItemsFor(project);
+  const totalUnits=items.reduce((sum,item)=>sum+(Number(item.calculated_quantity)||0),0);
+  list.innerHTML=`<div class="project-detail-view">
+    <button type="button" id="backToProjects" style="border:0;background:transparent;padding:0;margin:0 0 18px;font-size:11px;color:#777">← Volver a proyectos</button>
+    <p class="eyebrow">PROYECTO</p>
+    <h3 style="font-size:30px;font-weight:500;letter-spacing:-.04em;margin:0 0 7px">${esc(project.name)}</h3>
+    <p style="font-size:11px;color:#888;margin:0 0 24px">${items.length} ${items.length===1?'producto':'productos'} · Cantidad calculada: ${totalUnits}</p>
+    ${items.length?`<div class="project-detail-items">${items.map((item,index)=>{const x=productFromDbId(item.product_id);const localId=x?.id;return `<article class="project-detail-item" data-product-local="${localId??''}" style="background:#fff;border:1px solid var(--line);padding:13px;margin-bottom:8px;cursor:${localId!=null?'pointer':'default'}"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start"><div><strong style="font-size:13px">${x?esc(x.name):'Producto'}</strong><div style="font-size:10px;color:#888;margin-top:4px">${x?esc(x.brand):''}</div></div><span style="font-size:9px;color:#999">#${index+1}</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:11px;font-size:9px;color:#777"><span>Ambiente: <b style="color:#333">${esc(item.room||'Sin definir')}</b></span><span>Cantidad: <b style="color:#333">${Number(item.quantity)||0} ${esc(item.unit||'')}</b></span><span>Merma: <b style="color:#333">${Number(item.waste_percent)||0}%</b></span><span>A comprar: <b style="color:#333">${item.purchase_quantity!=null?esc(String(item.purchase_quantity)):item.calculated_quantity!=null?esc(String(item.calculated_quantity)):'—'} ${esc(item.purchase_unit||item.unit||'')}</b></span></div></article>`}).join('')}</div>`:'<div class="empty" style="padding:35px 10px">Este proyecto todavía no tiene productos.</div>'}
+  </div>`;
+  const back=$('backToProjects');
+  if(back) back.onclick=renderProjects;
+  list.querySelectorAll('[data-product-local]').forEach(card=>{const id=Number(card.dataset.productLocal);if(id)card.onclick=()=>{openProduct(id);closeDrawer();}});
 }
 let pendingProductId=null;
 async function openProjectPicker(id){
