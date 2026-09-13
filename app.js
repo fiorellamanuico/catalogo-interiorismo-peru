@@ -259,6 +259,18 @@ function renderProjectPage(){
   const items=projectItemsFor(project);
   document.title=`${project.name} · Proyecto | Catálogo Interiorismo Perú`;
   const unitOptions=['und.','m²','m','ml','kg','g','l','set'];
+  const quantityStepForUnit=(unit)=>['und.','set'].includes(String(unit||'').toLowerCase())?1:0.1;
+  const syncQuantityInput=(input,unit,normalize=true)=>{
+    if(!input) return;
+    const step=quantityStepForUnit(unit);
+    input.step=String(step);
+    if(normalize){
+      const value=Number(input.value);
+      if(Number.isFinite(value)){
+        input.value=step===1?String(Math.max(0,Math.round(value))):String(Math.round(Math.max(0,value)*10)/10);
+      }
+    }
+  };
   const escAttr=(v)=>esc(v).replace(/"/g,'&quot;');
   const cleanNumber=(n)=>Number.isInteger(Number(n))?String(Number(n)):String(Number(Number(n).toFixed(3)));
   const purchaseName=(u,n)=>{
@@ -366,7 +378,7 @@ function renderProjectPage(){
             <div class="project-edit-panel ci-edit-panel">
               <div class="project-edit-grid ci-form">
                 <div class="project-edit-field ci-field"><label>AMBIENTE</label><input data-edit-field="room" type="text" value="${escAttr(item.room||'')}" placeholder="Ej. Comedor"></div>
-                <div class="project-edit-field ci-field"><label>CANTIDAD</label><input data-edit-field="quantity" type="number" min="0" step="0.001" value="${qty}"></div>
+                <div class="project-edit-field ci-field"><label>CANTIDAD</label><input data-edit-field="quantity" type="number" min="0" step="${quantityStepForUnit(unit)}" value="${qty}"></div>
                 <div class="project-edit-field ci-field"><label>UNIDAD</label><select data-edit-field="unit">${unitOptions.map(u=>`<option value="${u}" ${u===unit?'selected':''}>${u}</option>`).join('')}</select></div>
                 <div class="project-edit-field ci-field"><label>UNIDAD DE COMPRA</label><input data-edit-field="purchase_unit" type="text" value="${escAttr(purchaseUnit)}" placeholder="caja"></div>
                 <div class="project-edit-field ci-field"><label>CONTENIDO / UNIDAD</label><input data-edit-field="purchase_factor" type="number" min="0.001" step="0.001" value="${purchaseFactor}"></div>
@@ -417,6 +429,10 @@ function renderProjectPage(){
     const panel=sel.closest('.ci-edit-panel');
     const editor=panel?.querySelector('.project-merma-editor');
     if(editor) editor.style.display=sel.value==='percent'?'block':'none';
+  }));
+  mount.querySelectorAll('[data-edit-field="unit"]').forEach(sel=>sel.addEventListener('change',()=>{
+    const panel=sel.closest('.ci-edit-panel');
+    syncQuantityInput(panel?.querySelector('[data-edit-field="quantity"]'),sel.value,true);
   }));
   $('projectAddProduct')?.addEventListener('click',()=>openProjectAddModal(project.id));
   $('projectAddEmpty')?.addEventListener('click',()=>openProjectAddModal(project.id));
@@ -471,7 +487,7 @@ function openProjectAddModal(projectId){
     $('ciAddConfig').innerHTML=`<div class="ci-add-selected"><span class="ci-add-thumb large" style="--t1:${escAttrValue(selected.tone1||'#e6dfd3')};--t2:${escAttrValue(selected.tone2||'#c8bcaa')}">${esc((selected.name||'P').trim().charAt(0).toUpperCase())}</span><div><p class="eyebrow">PRODUCTO SELECCIONADO</p><h3>${esc(selected.name)}</h3><p>${esc(selected.brand)} · ${esc(selected.category)}</p></div></div>
       <div class="ci-add-form">
         <div class="ci-add-field"><label>AMBIENTE</label><input id="ciAddRoom" type="text" placeholder="Ej. Comedor"></div>
-        <div class="ci-add-field"><label>CANTIDAD</label><input id="ciAddQty" type="number" min="0" step="0.01" value="1"></div>
+        <div class="ci-add-field"><label>CANTIDAD</label><input id="ciAddQty" type="number" min="0" step="1" value="1"></div>
         <div class="ci-add-field"><label>UNIDAD</label><select id="ciAddUnit"><option>und.</option><option>m²</option><option>m</option><option>ml</option><option>kg</option><option>g</option><option>l</option><option>set</option></select></div>
         <div class="ci-add-field"><label>UNIDAD DE COMPRA</label><input id="ciAddPurchaseUnit" type="text" value="und."></div>
         <div class="ci-add-field"><label>CONTENIDO / UNIDAD</label><input id="ciAddFactor" type="number" min="0.001" step="0.001" value="1"></div>
@@ -479,6 +495,8 @@ function openProjectAddModal(projectId){
         <div class="ci-add-field ci-add-waste-value" id="ciAddWasteWrap" style="display:none"><label>PORCENTAJE DE MERMA</label><input id="ciAddWaste" type="number" min="0" step="0.1" value="10"></div>
       </div>
       <div class="ci-add-actions"><button type="button" class="ci-add-cancel" data-add-close>Cancelar</button><button type="button" class="ci-add-save" id="ciAddSave">Agregar producto</button></div>`;
+    syncQuantityInput($('ciAddQty'),$('ciAddUnit').value,false);
+    $('ciAddUnit').onchange=()=>syncQuantityInput($('ciAddQty'),$('ciAddUnit').value,true);
     $('ciAddWasteMode').onchange=()=>{$('ciAddWasteWrap').style.display=$('ciAddWasteMode').value==='percent'?'block':'none'};
     $('ciAddSave').onclick=async()=>{
       const saveBtn=$('ciAddSave');
