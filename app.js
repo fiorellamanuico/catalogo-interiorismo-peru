@@ -259,76 +259,83 @@ function renderProjectPage(){
   const items=projectItemsFor(project);
   document.title=`${project.name} · Proyecto | Catálogo Interiorismo Perú`;
 
-  mount.innerHTML=`<div class="project-page-wrap">
+  mount.innerHTML=`<div class="project-page-wrap project-page-clean">
     <style>
-      .project-page-top{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:36px}
-      .project-page-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:30px;padding-bottom:28px;border-bottom:1px solid var(--line)}
-      .project-page-heading h1{margin-bottom:8px}
-      .project-meta{font-size:11px;color:#777;margin:0}
-      .project-products-section{margin-top:72px}
-      .project-edit-note{font-size:10px;color:#888;margin:8px 0 0;max-width:560px}
-      .project-section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:24px}
-      .project-section-heading h2{margin:0 0 4px}
-      .project-section-heading>span{font-size:9px;color:#999;white-space:nowrap}
-      .project-products-list{width:100%;border-top:1px solid var(--line)}
-      .project-col-head{display:grid;grid-template-columns:minmax(220px,2.15fr) minmax(110px,1fr) 82px 72px minmax(190px,1.55fr) 110px;gap:14px;align-items:end;padding:0 8px 10px}
-      .project-col-head span{font-size:8px;letter-spacing:.12em;color:#999}
-      .project-product-row{display:grid;grid-template-columns:minmax(220px,2.15fr) minmax(110px,1fr) 82px 72px minmax(190px,1.55fr) 110px;gap:14px;align-items:center;border-bottom:1px solid var(--line);padding:15px 8px}
-      .project-product-row:hover{background:#fff}
-      .project-product-main{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;min-width:0}
-      .project-product-index{font-size:9px;color:#999;width:22px;flex:0 0 22px}
-      .project-product-main h3{font-size:14px;font-weight:500;margin:0 0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      .project-product-main p{font-size:9px;color:#888;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      .project-product-data{display:contents}
-      .project-product-data .field-wrap{min-width:0;display:flex;flex-direction:column;gap:4px}
-      .project-product-data input,.project-product-data select{width:100%;box-sizing:border-box;border:1px solid var(--line);background:#fff;padding:7px 7px;font:inherit;font-size:10px;color:var(--ink);outline:none;min-width:0;height:32px}
-      .project-product-data input:focus,.project-product-data select:focus{border-color:#777}
-      .project-product-data input[type=number]{appearance:textfield}
-      .project-product-data input[type=number]::-webkit-inner-spin-button,.project-product-data input[type=number]::-webkit-outer-spin-button{appearance:none;margin:0}
-      .project-purchase-cell{display:flex;flex-direction:column;gap:5px;min-width:0}
-      .project-purchase-config{display:grid;grid-template-columns:minmax(70px,1fr) 64px;gap:5px}
-      .project-purchase-config input{min-width:0}
-      .project-purchase-caption{font-size:8px;color:#999;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      .project-merma-line{display:flex;align-items:center;gap:5px;min-width:0}
-      .project-merma-line label{font-size:8px;letter-spacing:.06em;color:#999;white-space:nowrap}
-      .project-merma-line select{height:26px;padding:4px 5px;flex:0 0 86px}
-      .project-merma-line input{height:26px;padding:4px 5px;flex:0 0 52px}
-      .project-merma-na{font-size:9px;color:#888}
-      .project-purchase-result strong{font-size:12px;font-weight:500;white-space:nowrap}
-      .project-purchase-result small{display:block;font-size:8px;color:#888;margin-top:4px;line-height:1.3}
-      .project-save-state{font-size:8px;color:#888;min-height:9px;margin-top:1px}
-      .project-empty{padding:35px 0;border-top:1px solid var(--line)}
-      @media(max-width:1050px){
-        .project-col-head,.project-product-row{grid-template-columns:minmax(180px,1.7fr) minmax(100px,.9fr) 75px 68px minmax(175px,1.45fr) 100px;gap:10px}
+      .project-page-clean{max-width:1400px!important;padding:42px 5vw 90px!important}
+      .project-page-clean .project-page-top{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:30px}
+      .project-page-clean .project-page-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:30px;padding-bottom:24px;border-bottom:1px solid var(--line)}
+      .project-page-clean .project-page-heading h1{font-size:68px;line-height:.95;font-weight:500;letter-spacing:-.055em;margin:5px 0 10px}
+      .project-page-clean .project-meta{font-size:11px;color:#777;margin:0}
+      .project-page-clean .project-products-section{margin-top:54px;width:100%}
+      .project-page-clean .project-edit-note{font-size:10px;color:#888;margin:7px 0 0;max-width:620px}
+      .project-page-clean .project-section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:16px}
+      .project-page-clean .project-section-heading h2{font-size:30px;line-height:1.05;margin:0 0 4px;font-weight:500;letter-spacing:-.035em}
+      .project-page-clean .project-section-heading>span{font-size:9px;color:#999;white-space:nowrap}
+      .project-page-clean .project-products-list{width:100%;border-top:1px solid var(--line)}
+      .project-page-clean .project-col-head,.project-page-clean .project-product-row{display:grid;grid-template-columns:minmax(220px,2.25fr) minmax(125px,1.2fr) 88px 78px minmax(245px,1.55fr) 120px;gap:16px;align-items:center}
+      .project-page-clean .project-col-head{padding:0 10px 9px;align-items:end}
+      .project-page-clean .project-col-head span{font-size:8px;letter-spacing:.12em;color:#999}
+      .project-page-clean .project-product-row{padding:17px 10px;border-bottom:1px solid var(--line);min-width:0}
+      .project-page-clean .project-product-row:hover{background:#fff}
+      .project-page-clean .project-product-main{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;min-width:0}
+      .project-page-clean .project-product-index{font-size:9px;color:#999;width:24px;flex:0 0 24px}
+      .project-page-clean .project-product-main h3{font-size:15px;font-weight:500;margin:0 0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .project-page-clean .project-product-main p{font-size:9px;color:#888;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .project-page-clean .project-field{min-width:0}
+      .project-page-clean .project-field input,.project-page-clean .project-field select{width:100%;box-sizing:border-box;border:1px solid var(--line);background:#fff;padding:7px 8px;font:inherit;font-size:10px;color:var(--ink);outline:none;height:32px;min-width:0}
+      .project-page-clean .project-field input:focus,.project-page-clean .project-field select:focus{border-color:#777}
+      .project-page-clean input[type=number]{appearance:textfield}
+      .project-page-clean input[type=number]::-webkit-inner-spin-button,.project-page-clean input[type=number]::-webkit-outer-spin-button{appearance:none;margin:0}
+      .project-page-clean .project-purchase-cell{display:flex;flex-direction:column;gap:5px;min-width:0}
+      .project-page-clean .project-purchase-config{display:grid;grid-template-columns:minmax(80px,1fr) 72px;gap:6px}
+      .project-page-clean .project-purchase-caption{font-size:8px;color:#999;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .project-page-clean .project-merma-line{display:flex;align-items:center;gap:5px;min-height:20px}
+      .project-page-clean .project-merma-label{font-size:8px;letter-spacing:.08em;color:#999;white-space:nowrap}
+      .project-page-clean .project-merma-mode{font-size:9px;color:#777;white-space:nowrap}
+      .project-page-clean .project-merma-add{border:0;background:transparent;padding:0;text-decoration:underline;text-underline-offset:2px;font:inherit;font-size:9px;color:#555;cursor:pointer}
+      .project-page-clean .project-merma-line select{height:26px;padding:4px 5px;width:auto;flex:0 0 88px}
+      .project-page-clean .project-merma-line input{height:26px;padding:4px 6px;width:52px;flex:0 0 52px}
+      .project-page-clean .project-purchase-result strong{font-size:13px;font-weight:500;white-space:nowrap;display:block}
+      .project-page-clean .project-purchase-result small{display:block;font-size:8px;color:#888;margin-top:4px;line-height:1.3}
+      .project-page-clean .project-save-state{font-size:8px;color:#888;min-height:0;margin-top:4px}
+      .project-page-clean .project-empty{padding:45px 0;border-top:1px solid var(--line)}
+      .project-page-clean .project-status{font-size:10px;text-transform:uppercase;letter-spacing:.12em;border:1px solid var(--line);padding:8px 11px;background:#fff}
+      @media(max-width:1180px){
+        .project-page-clean .project-col-head,.project-page-clean .project-product-row{grid-template-columns:minmax(200px,2fr) minmax(115px,1.1fr) 82px 72px minmax(215px,1.45fr) 108px;gap:11px}
       }
-      @media(max-width:760px){
-        .project-page-wrap{padding:28px 5vw 60px}
-        .project-page-top,.project-page-heading,.project-section-heading{display:block}
-        .project-top-action{margin-top:18px}
-        .project-status{display:inline-block;margin-top:15px}
-        .project-products-section{margin-top:50px}
-        .project-col-head{display:none}
-        .project-product-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:18px 0}
-        .project-product-main{grid-column:1/-1}
-        .project-product-data{display:contents}
-        .project-product-data .field-wrap:nth-of-type(1){grid-column:1}
-        .project-product-data .field-wrap:nth-of-type(2){grid-column:2}
-        .project-product-data .field-wrap:nth-of-type(3){grid-column:1}
-        .project-product-data .field-wrap:nth-of-type(4){grid-column:2}
-        .project-product-data .field-wrap:nth-of-type(5){grid-column:1/-1}
-        .project-product-data .field-wrap:nth-of-type(6){grid-column:1/-1}
+      @media(max-width:900px){
+        .project-page-clean{padding:32px 5vw 70px!important}
+        .project-page-clean .project-page-heading{display:block}
+        .project-page-clean .project-status{display:inline-block;margin-top:15px}
+        .project-page-clean .project-products-section{margin-top:45px}
+        .project-page-clean .project-col-head{display:none}
+        .project-page-clean .project-product-row{grid-template-columns:1fr 1fr;gap:12px;padding:20px 0}
+        .project-page-clean .project-product-main{grid-column:1/-1}
+        .project-page-clean .project-field-room{grid-column:1}
+        .project-page-clean .project-field-quantity{grid-column:2}
+        .project-page-clean .project-field-unit{grid-column:1}
+        .project-page-clean .project-field-purchase{grid-column:2}
+        .project-page-clean .project-purchase-result{grid-column:1/-1}
+      }
+      @media(max-width:560px){
+        .project-page-clean .project-page-top{display:block}
+        .project-page-clean .project-top-action{margin-top:16px}
+        .project-page-clean .project-page-heading h1{font-size:48px}
+        .project-page-clean .project-section-heading{display:block}
+        .project-page-clean .project-section-heading>span{display:block;margin-top:8px}
+        .project-page-clean .project-product-row{grid-template-columns:1fr}
+        .project-page-clean .project-product-main,.project-page-clean .project-field-room,.project-page-clean .project-field-quantity,.project-page-clean .project-field-unit,.project-page-clean .project-field-purchase,.project-page-clean .project-purchase-result{grid-column:1}
       }
     </style>
 
     <div class="project-page-top"><a class="back-link" href="index.html">← Volver al catálogo</a><button class="project-top-action" id="projectAddProduct">＋ Agregar producto</button></div>
-
     <div class="project-page-heading">
       <div><p class="eyebrow">PROYECTO</p><h1>${esc(project.name)}</h1><p class="project-meta">${items.length} ${items.length===1?'producto':'productos'}${project.client?` · ${esc(project.client)}`:''}${project.location?` · ${esc(project.location)}`:''}</p></div>
       <span class="project-status">${esc(project.status||'draft')}</span>
     </div>
 
     <section class="project-products-section">
-      <div class="project-section-heading"><div><p class="eyebrow">ESPECIFICACIÓN</p><h2>Productos del proyecto</h2><p class="project-edit-note">Una fila por producto. Define ambiente, cantidad y compra. La merma aparece solo cuando la activas.</p></div><span>${items.length} ${items.length===1?'producto':'productos'}</span></div>
+      <div class="project-section-heading"><div><p class="eyebrow">ESPECIFICACIÓN</p><h2>Productos del proyecto</h2><p class="project-edit-note">Una fila por producto. La merma se configura solo cuando corresponde.</p></div><span>${items.length} ${items.length===1?'producto':'productos'}</span></div>
       ${items.length?`<div class="project-products-list">
         <div class="project-col-head"><span>PRODUCTO</span><span>AMBIENTE</span><span>CANTIDAD</span><span>UNIDAD</span><span>COMPRA</span><span>A COMPRAR</span></div>
         ${items.map((item,index)=>{
@@ -336,25 +343,29 @@ function renderProjectPage(){
           const productHref=x?`producto.html?slug=${encodeURIComponent(x.slug)}`:'#';
           const qty=Number(item.quantity)||0;
           const unit=item.unit||'und.';
-          const waste=Number(item.waste_percent)||0;
-          const wasteActive=item.waste_percent!==null && item.waste_percent!==undefined && unit!=='und.';
+          const waste=item.waste_percent==null?null:Number(item.waste_percent)||0;
+          const wasteActive=waste!==null;
           const calculated=Number((qty*(1+(wasteActive?waste:0)/100)).toFixed(3));
           const purchaseUnit=item.purchase_unit||unit||'und.';
           const purchaseFactor=Number(item.purchase_factor)||1;
           const purchaseQty=purchaseFactor>0?Math.ceil((calculated||0)/purchaseFactor):0;
           const room=item.room||'';
-          const mermaMode=wasteActive?'percent':'none';
           const purchaseCaption=purchaseFactor>0?`${Number(purchaseFactor.toFixed(3))} ${unit} / ${purchaseUnit}`:'';
+          const noMermaByUnit=unit==='und.';
           return `<article class="project-product-row" data-item-id="${esc(item.id)}">
             <a class="project-product-main" href="${productHref}"><div class="project-product-index">${String(index+1).padStart(2,'0')}</div><div><h3>${x?esc(x.name):'Producto'}</h3><p>${x?esc(x.brand):'Producto del catálogo'}</p></div></a>
-            <div class="project-product-data">
-              <div class="field-wrap"><input data-item-field="room" type="text" value="${esc(room)}" placeholder="Ej. Comedor"><small class="project-save-state" data-save-state></small></div>
-              <div class="field-wrap"><input data-item-field="quantity" type="number" min="0" step="0.001" value="${qty}"><small class="project-save-state" data-save-state></small></div>
-              <div class="field-wrap"><select data-item-field="unit">${['und.','m²','m','ml','kg','g','l','set'].map(u=>`<option value="${u}" ${u===unit?'selected':''}>${u}</option>`).join('')}</select></div>
-              <div class="field-wrap"></div>
-              <div class="field-wrap"><div class="project-purchase-cell"><div class="project-purchase-config"><input data-item-field="purchase_unit" type="text" value="${esc(purchaseUnit)}" placeholder="caja"><input data-item-field="purchase_factor" type="number" min="0.001" step="0.001" value="${purchaseFactor}" title="Contenido por unidad de compra"></div><div class="project-purchase-caption">${esc(purchaseCaption)}</div><div class="project-merma-line"><label>MERMA</label><select data-item-field="merma_mode"><option value="none" ${mermaMode==='none'?'selected':''}>No aplica</option><option value="percent" ${mermaMode==='percent'?'selected':''}>%</option></select>${mermaMode==='percent'?`<input data-item-field="waste_percent" type="number" min="0" step="0.1" value="${waste}">`:''}</div><small class="project-save-state" data-save-state></small></div></div>
-              <div class="field-wrap project-purchase-result"><strong data-calculated>${purchaseQty} ${esc(purchaseUnit)}</strong><small data-calc-state>${wasteActive&&waste?`${Number(calculated.toFixed(3))} ${esc(unit)} con ${waste}% de merma.`:`${Number(calculated.toFixed(3))} ${esc(unit)} · sin merma.`}</small></div>
-            </div>
+            <div class="project-field project-field-room"><input data-item-field="room" type="text" value="${esc(room)}" placeholder="Ej. Comedor"></div>
+            <div class="project-field project-field-quantity"><input data-item-field="quantity" type="number" min="0" step="0.001" value="${qty}"></div>
+            <div class="project-field project-field-unit"><select data-item-field="unit">${['und.','m²','m','ml','kg','g','l','set'].map(u=>`<option value="${u}" ${u===unit?'selected':''}>${u}</option>`).join('')}</select></div>
+            <div class="project-field project-field-purchase"><div class="project-purchase-cell">
+              <div class="project-purchase-config"><input data-item-field="purchase_unit" type="text" value="${esc(purchaseUnit)}" placeholder="caja"><input data-item-field="purchase_factor" type="number" min="0.001" step="0.001" value="${purchaseFactor}" title="Contenido por unidad de compra"></div>
+              <div class="project-purchase-caption">${esc(purchaseCaption)}</div>
+              <div class="project-merma-line">
+                <span class="project-merma-label">MERMA</span>
+                ${noMermaByUnit?`<span class="project-merma-mode">No aplica</span>`:wasteActive?`<select data-item-field="merma_mode"><option value="percent" selected>%</option><option value="none">No aplica</option></select><input data-item-field="waste_percent" type="number" min="0" step="0.1" value="${waste}">`: ` <span class="project-merma-mode">—</span><button type="button" class="project-merma-add" data-item-field="merma_activate">Activar</button>`}
+              </div>
+            </div></div>
+            <div class="project-field project-purchase-result"><strong data-calculated>${purchaseQty} ${esc(purchaseUnit)}</strong><small data-calc-state>${wasteActive&&waste?`${Number(calculated.toFixed(3))} ${esc(unit)} con ${waste}% de merma.`:`${Number(calculated.toFixed(3))} ${esc(unit)}${wasteActive?' · sin merma.':''}`}</small></div>
           </article>`;
         }).join('')}
       </div>`:'<div class="project-empty"><h3>Este proyecto todavía no tiene productos.</h3><p>Agrega productos desde cualquier ficha del catálogo.</p><button class="primary" id="projectAddEmpty">＋ Agregar producto</button></div>'}
@@ -367,6 +378,17 @@ function renderProjectPage(){
     const item=items.find(i=>String(i.id)===String(itemId));
     const field=input.dataset.itemField;
     if(!item||!field) return;
+
+    if(field==='merma_activate'){
+      const qty=Number(item.quantity)||0;
+      const newWaste=0;
+      const calculated=Number(qty.toFixed(3));
+      const factor=Number(item.purchase_factor)||1;
+      const purchaseQty=factor>0?Math.ceil(calculated/factor):0;
+      const {data,error}=await supabaseClient.from('project_items').update({waste_percent:newWaste,calculated_quantity:calculated,purchase_quantity:purchaseQty}).eq('id',item.id).select('id,project_id,product_id,room,quantity,unit,waste_percent,calculated_quantity,purchase_unit,purchase_factor,purchase_quantity,price,currency,supplier_name,quote_status,notes,added_by,created_at,updated_at').single();
+      if(error){console.error(error);toast('No se pudo activar la merma.');return;}
+      Object.assign(item,data); renderProjectPage(); toast('Merma activada'); return;
+    }
 
     if(field==='merma_mode'){
       const mode=input.value;
@@ -384,8 +406,6 @@ function renderProjectPage(){
     if(field==='quantity'||field==='waste_percent'||field==='purchase_factor') value=Number(value);
     if(field==='purchase_unit' && value.trim()==='') value=null;
     if(field==='room' && value.trim()==='') value=null;
-    const stateEl=input.closest('.field-wrap')?.querySelector('[data-save-state]');
-    if(stateEl) stateEl.textContent='Guardando…';
     input.disabled=true;
     try{
       const nextQuantity=field==='quantity'?value:Number(item.quantity)||0;
@@ -397,7 +417,7 @@ function renderProjectPage(){
       const nextCalculated=Number((nextQuantity*(1+(mermaIsActive?nextWaste:0)/100)).toFixed(3));
       const nextPurchaseQuantity=nextFactor>0?Math.ceil(nextCalculated/nextFactor):null;
       const updatePayload={[field]:value,calculated_quantity:nextCalculated,purchase_quantity:nextPurchaseQuantity,purchase_unit:nextPurchaseUnit,purchase_factor:nextFactor};
-      if(field==='unit' && nextUnit==='und.' && (item.waste_percent!==null&&item.waste_percent!==undefined)) updatePayload.waste_percent=null;
+      if(field==='unit' && nextUnit==='und.') updatePayload.waste_percent=null;
       const {data,error}=await supabaseClient.from('project_items').update(updatePayload).eq('id',item.id).select('id,project_id,product_id,room,quantity,unit,waste_percent,calculated_quantity,purchase_unit,purchase_factor,purchase_quantity,price,currency,supplier_name,quote_status,notes,added_by,created_at,updated_at').single();
       if(error) throw error;
       Object.assign(item,data); renderProjectPage(); toast('Cambio guardado');
@@ -407,6 +427,7 @@ function renderProjectPage(){
 
   mount.querySelectorAll('[data-item-field]').forEach(input=>{
     const field=input.dataset.itemField;
+    if(field==='merma_activate'){input.addEventListener('click',()=>saveField(input));return;}
     const event=(input.tagName==='SELECT'||field==='quantity'||field==='waste_percent'||field==='purchase_factor')?'change':'blur';
     input.addEventListener(event,()=>saveField(input));
   });
