@@ -264,80 +264,56 @@ function renderProjectPage(){
   const unitLabel=(u,n)=>`${n} ${u}`;
   const purchaseLabel=(n,u)=>`${n} ${u}${Number(n)===1?'':'s'}`;
 
-  mount.innerHTML=`<div class="project-page-wrap project-page-clean">
+  mount.innerHTML=`<div class="project-page-wrap project-page-clean ci-project">
     <style>
-      .project-page-top{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:30px}
-      .project-page-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:30px;padding-bottom:24px;border-bottom:1px solid var(--line)}
-      .project-page-heading h1{margin-bottom:7px}
-      .project-meta{font-size:11px;color:#777;margin:0}
-      .project-products-section{margin-top:48px}
-      .project-edit-note{font-size:10px;color:#888;margin:7px 0 0;max-width:680px}
-      .project-section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:18px}
-      .project-section-heading h2{margin:0 0 4px}
-      .project-section-heading>span{font-size:9px;color:#999;white-space:nowrap}
-      .project-products-list{width:100%;border-top:1px solid var(--line)}
-      .project-col-head,.project-product-row{display:grid;grid-template-columns:minmax(250px,2.2fr) minmax(110px,1fr) minmax(105px,.85fr) minmax(210px,1.5fr) minmax(105px,.9fr) 62px;gap:22px;align-items:center}
-      .project-col-head{padding:10px 0 9px}
-      .project-col-head span{font-size:8px;letter-spacing:.12em;color:#999}
-      .project-product-row{position:relative;border-bottom:1px solid var(--line);padding:20px 0;min-width:0}
-      .project-product-row:hover{background:rgba(255,255,255,.28)}
-      .project-product-main{display:flex;align-items:center;gap:13px;text-decoration:none;color:inherit;min-width:0}
-      .project-product-index{font-size:9px;color:#aaa;width:22px;flex:0 0 22px}
-      .project-product-main h3{font-size:14px;font-weight:500;margin:0 0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      .project-product-main p{font-size:9px;color:#888;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      .project-summary{min-width:0;font-size:11px;color:var(--ink);line-height:1.35}
-      .project-summary strong{display:block;font-weight:500;background:transparent!important;padding:0!important}
-      .project-summary small{display:block;font-size:8px;color:#999;margin-top:4px;line-height:1.35}
-      .project-buy-result strong{font-size:12px;font-weight:600;white-space:nowrap}
-      .project-buy-result small{font-size:8px;color:#888;margin-top:4px}
-      .project-edit-btn{border:1px solid var(--line);background:transparent;color:var(--ink);font:inherit;font-size:9px;padding:7px 9px;cursor:pointer;white-space:nowrap}
-      .project-edit-btn:hover{background:#fff}
-      .project-edit-panel{grid-column:1/-1;border-top:1px solid var(--line);padding:18px 0 3px;margin-top:2px;display:none}
-      .project-product-row.is-editing .project-edit-panel{display:block}
-      .project-edit-grid{display:grid;grid-template-columns:1.3fr .8fr .7fr 1fr .9fr 1.1fr;gap:12px;align-items:end}
-      .project-edit-field{display:flex;flex-direction:column;gap:6px;min-width:0}
-      .project-edit-field label{font-size:8px;letter-spacing:.09em;color:#999}
-      .project-edit-field input,.project-edit-field select{width:100%;box-sizing:border-box;border:1px solid var(--line);background:#fff;padding:8px 9px;font:inherit;font-size:10px;color:var(--ink);outline:none;height:34px}
-      .project-edit-field input:focus,.project-edit-field select:focus{border-color:#777}
-      .project-edit-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:13px}
-      .project-save-btn{background:var(--ink);color:#fff;border:0;padding:8px 13px;font:inherit;font-size:9px;cursor:pointer}
-      .project-cancel-btn{background:transparent;color:var(--ink);border:1px solid var(--line);padding:8px 13px;font:inherit;font-size:9px;cursor:pointer}
-      .project-edit-hint{font-size:8px;color:#999;margin:9px 0 0}
-      .project-empty{padding:35px 0;border-top:1px solid var(--line)}
-      @media(max-width:1050px){
-        .project-col-head,.project-product-row{grid-template-columns:minmax(210px,2fr) minmax(100px,1fr) 95px minmax(170px,1.45fr) 105px 58px;gap:12px}
-      }
-      @media(max-width:760px){
-        .project-page-wrap{padding:28px 5vw 60px}
-        .project-page-top,.project-page-heading,.project-section-heading{display:block}
-        .project-top-action{margin-top:18px}
-        .project-status{display:inline-block;margin-top:15px}
-        .project-products-section{margin-top:42px}
-        .project-col-head{display:none}
-        .project-product-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:20px 0}
-        .project-product-main{grid-column:1/-1}
-        .project-summary:nth-child(2){grid-column:1}
-        .project-summary:nth-child(3){grid-column:2}
-        .project-summary:nth-child(4){grid-column:1}
-        .project-buy-result{grid-column:2}
-        .project-edit-btn{grid-column:1/-1;justify-self:start}
-        .project-edit-panel{grid-column:1/-1}
-        .project-edit-grid{grid-template-columns:1fr 1fr}
-        .project-edit-actions{justify-content:flex-start}
-      }
+      .ci-project{width:100%!important;max-width:1180px!important;margin:0 auto!important;color:var(--ink)!important}
+      .ci-project .ci-top{display:flex!important;justify-content:space-between!important;align-items:center!important;margin-bottom:28px!important}
+      .ci-project .ci-heading{display:flex!important;justify-content:space-between!important;align-items:flex-end!important;border-bottom:1px solid var(--line)!important;padding-bottom:22px!important}
+      .ci-project .ci-heading h1{margin:0 0 7px!important;font-size:clamp(48px,6vw,76px)!important;line-height:.98!important;font-weight:500!important}
+      .ci-project .ci-meta{margin:0!important;font-size:11px!important;color:#777!important}
+      .ci-project .ci-section{margin-top:54px!important}
+      .ci-project .ci-section-head{display:flex!important;justify-content:space-between!important;align-items:flex-end!important;border-bottom:1px solid var(--line)!important;padding-bottom:14px!important}
+      .ci-project .ci-section-head h2{margin:0 0 4px!important;font-size:27px!important;font-weight:500!important}
+      .ci-project .ci-note{margin:0!important;font-size:10px!important;color:#888!important}
+      .ci-project .ci-table{width:100%!important}
+      .ci-project .ci-header,.ci-project .ci-row{display:grid!important;grid-template-columns:minmax(300px,2.6fr) minmax(120px,1.05fr) minmax(110px,.9fr) minmax(250px,1.55fr) minmax(120px,1fr) 62px!important;column-gap:24px!important;align-items:center!important}
+      .ci-project .ci-header{padding:10px 0!important;border-bottom:1px solid var(--line)!important}
+      .ci-project .ci-header span{font-size:8px!important;letter-spacing:.12em!important;color:#999!important}
+      .ci-project .ci-row{position:relative!important;min-width:0!important;padding:20px 0!important;border-bottom:1px solid var(--line)!important;background:transparent!important}
+      .ci-project .ci-product{display:flex!important;align-items:center!important;gap:12px!important;min-width:0!important;color:inherit!important;text-decoration:none!important;background:transparent!important}
+      .ci-project .ci-num{width:22px!important;flex:0 0 22px!important;font-size:9px!important;color:#aaa!important}
+      .ci-project .ci-product h3{margin:0 0 3px!important;font-size:14px!important;line-height:1.2!important;font-weight:500!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+      .ci-project .ci-product p{margin:0!important;font-size:9px!important;line-height:1.2!important;color:#888!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+      .ci-project .ci-value{min-width:0!important;font-size:11px!important;line-height:1.35!important;color:var(--ink)!important;background:transparent!important;padding:0!important;border:0!important}
+      .ci-project .ci-value strong{display:block!important;margin:0!important;padding:0!important;background:transparent!important;border:0!important;font-size:11px!important;line-height:1.35!important;font-weight:500!important;color:var(--ink)!important}
+      .ci-project .ci-value small{display:block!important;margin:4px 0 0!important;padding:0!important;background:transparent!important;border:0!important;font-size:8px!important;line-height:1.3!important;color:#999!important}
+      .ci-project .ci-buy strong{font-size:13px!important;font-weight:600!important;white-space:nowrap!important}
+      .ci-project .ci-edit{border:1px solid var(--line)!important;background:transparent!important;color:var(--ink)!important;font:inherit!important;font-size:9px!important;padding:7px 9px!important;cursor:pointer!important;white-space:nowrap!important}
+      .ci-project .ci-edit-panel{grid-column:1/-1!important;display:none!important;border-top:1px solid var(--line)!important;padding:18px 0 2px!important;margin-top:18px!important;background:transparent!important}
+      .ci-project .ci-row.is-editing .ci-edit-panel{display:block!important}
+      .ci-project .ci-form{display:grid!important;grid-template-columns:1.3fr .8fr .7fr 1fr .9fr 1fr!important;gap:12px!important;align-items:end!important}
+      .ci-project .ci-field{display:flex!important;flex-direction:column!important;gap:6px!important;min-width:0!important}
+      .ci-project .ci-field label{font-size:8px!important;letter-spacing:.09em!important;color:#999!important}
+      .ci-project .ci-field input,.ci-project .ci-field select{width:100%!important;height:34px!important;box-sizing:border-box!important;border:1px solid var(--line)!important;background:#fff!important;padding:8px 9px!important;font:inherit!important;font-size:10px!important;color:var(--ink)!important;outline:none!important;border-radius:0!important}
+      .ci-project .ci-actions{display:flex!important;justify-content:flex-end!important;gap:8px!important;margin-top:13px!important}
+      .ci-project .ci-save{background:var(--ink)!important;color:#fff!important;border:0!important;padding:8px 13px!important;font:inherit!important;font-size:9px!important;cursor:pointer!important}
+      .ci-project .ci-cancel{background:transparent!important;color:var(--ink)!important;border:1px solid var(--line)!important;padding:8px 13px!important;font:inherit!important;font-size:9px!important;cursor:pointer!important}
+      .ci-project .ci-empty{padding:35px 0!important;border-top:1px solid var(--line)!important}
+      @media(max-width:1050px){.ci-project .ci-header,.ci-project .ci-row{grid-template-columns:minmax(250px,2.2fr) minmax(105px,1fr) 100px minmax(210px,1.5fr) 110px 58px!important;column-gap:16px!important}}
+      @media(max-width:760px){.ci-project{padding:0 5vw 60px!important}.ci-project .ci-top,.ci-project .ci-heading,.ci-project .ci-section-head{display:block!important}.ci-project .ci-heading{padding-bottom:18px!important}.ci-project .ci-section{margin-top:40px!important}.ci-project .ci-header{display:none!important}.ci-project .ci-row{display:grid!important;grid-template-columns:1fr 1fr!important;row-gap:14px!important;column-gap:16px!important}.ci-project .ci-product{grid-column:1/-1!important}.ci-project .ci-value:nth-of-type(2){grid-column:1!important}.ci-project .ci-value:nth-of-type(3){grid-column:2!important}.ci-project .ci-value:nth-of-type(4){grid-column:1!important}.ci-project .ci-buy{grid-column:2!important}.ci-project .ci-edit{grid-column:1/-1!important;justify-self:start!important}.ci-project .ci-edit-panel{grid-column:1/-1!important}.ci-project .ci-form{grid-template-columns:1fr 1fr!important}.ci-project .ci-actions{justify-content:flex-start!important}}
     </style>
 
-    <div class="project-page-top"><a class="back-link" href="index.html">← Volver al catálogo</a><button class="project-top-action" id="projectAddProduct">＋ Agregar producto</button></div>
+    <div class="project-page-top ci-top"><a class="back-link" href="index.html">← Volver al catálogo</a><button class="project-top-action" id="projectAddProduct">＋ Agregar producto</button></div>
 
-    <div class="project-page-heading">
-      <div><p class="eyebrow">PROYECTO</p><h1>${esc(project.name)}</h1><p class="project-meta">${items.length} ${items.length===1?'producto':'productos'}${project.client?` · ${esc(project.client)}`:''}${project.location?` · ${esc(project.location)}`:''}</p></div>
+    <div class="project-page-heading ci-heading">
+      <div><p class="eyebrow">PROYECTO</p><h1>${esc(project.name)}</h1><p class="project-meta ci-meta">${items.length} ${items.length===1?'producto':'productos'}${project.client?` · ${esc(project.client)}`:''}${project.location?` · ${esc(project.location)}`:''}</p></div>
       <span class="project-status">${esc(project.status||'draft')}</span>
     </div>
 
-    <section class="project-products-section">
-      <div class="project-section-heading"><div><p class="eyebrow">ESPECIFICACIÓN</p><h2>Productos del proyecto</h2><p class="project-edit-note">Cada producto muestra solo lo esencial. Pulsa “Editar” cuando quieras cambiar cantidades, compra o merma.</p></div><span>${items.length} ${items.length===1?'producto':'productos'}</span></div>
-      ${items.length?`<div class="project-products-list">
-        <div class="project-col-head"><span>PRODUCTO</span><span>AMBIENTE</span><span>CANTIDAD</span><span>COMPRA</span><span>A COMPRAR</span><span></span></div>
+    <section class="project-products-section ci-section">
+      <div class="project-section-heading ci-section-head"><div><p class="eyebrow">ESPECIFICACIÓN</p><h2>Productos del proyecto</h2><p class="project-edit-note ci-note">Cada producto muestra solo lo esencial. Pulsa “Editar” cuando quieras cambiar cantidades, compra o merma.</p></div><span>${items.length} ${items.length===1?'producto':'productos'}</span></div>
+      ${items.length?`<div class="project-products-list ci-table">
+        <div class="project-col-head ci-header"><span>PRODUCTO</span><span>AMBIENTE</span><span>CANTIDAD</span><span>COMPRA</span><span>A COMPRAR</span><span></span></div>
         ${items.map((item,index)=>{
           const x=productFromDbId(item.product_id);
           const productHref=x?`producto.html?slug=${encodeURIComponent(x.slug)}`:'#';
@@ -353,25 +329,25 @@ function renderProjectPage(){
           const purchaseCaption=purchaseFactor>0?`${purchaseUnit} · ${Number(purchaseFactor.toFixed(3))} ${unit}/${purchaseUnit}`:'—';
           const calcCaption=wasteActive&&waste?`${Number(calculated.toFixed(3))} ${unit} con ${waste}% de merma.`:`${Number(calculated.toFixed(3))} ${unit}`;
           const buyLabel=purchaseLabel(purchaseQty,purchaseUnit);
-          return `<article class="project-product-row" data-item-id="${esc(item.id)}">
-            <a class="project-product-main" href="${productHref}"><div class="project-product-index">${String(index+1).padStart(2,'0')}</div><div><h3>${x?esc(x.name):'Producto'}</h3><p>${x?esc(x.brand):'Producto del catálogo'}</p></div></a>
-            <div class="project-summary"><strong>${esc(room)}</strong></div>
-            <div class="project-summary"><strong>${esc(unitLabel(qty,unit))}</strong></div>
-            <div class="project-summary"><strong>${esc(purchaseCaption)}</strong>${wasteActive&&waste?`<small>${waste}% de merma · ${esc(calcCaption)}</small>`:''}</div>
-            <div class="project-summary project-buy-result"><strong>${esc(buyLabel)}</strong>${wasteActive&&waste?`<small>${esc(calculated.toFixed(3))} ${esc(unit)} con merma</small>`:''}</div>
-            <button type="button" class="project-edit-btn" data-edit-item="${esc(item.id)}">Editar</button>
-            <div class="project-edit-panel">
-              <div class="project-edit-grid">
-                <div class="project-edit-field"><label>AMBIENTE</label><input data-edit-field="room" type="text" value="${escAttr(item.room||'')}" placeholder="Ej. Comedor"></div>
-                <div class="project-edit-field"><label>CANTIDAD</label><input data-edit-field="quantity" type="number" min="0" step="0.001" value="${qty}"></div>
-                <div class="project-edit-field"><label>UNIDAD</label><select data-edit-field="unit">${unitOptions.map(u=>`<option value="${u}" ${u===unit?'selected':''}>${u}</option>`).join('')}</select></div>
-                <div class="project-edit-field"><label>UNIDAD DE COMPRA</label><input data-edit-field="purchase_unit" type="text" value="${escAttr(purchaseUnit)}" placeholder="caja"></div>
-                <div class="project-edit-field"><label>CONTENIDO / UNIDAD</label><input data-edit-field="purchase_factor" type="number" min="0.001" step="0.001" value="${purchaseFactor}"></div>
-                <div class="project-edit-field"><label>MERMA</label><select data-edit-field="merma_mode"><option value="none" ${!wasteActive?'selected':''}>No aplicar</option><option value="percent" ${wasteActive?'selected':''}>Aplicar %</option></select></div>
+          return `<article class="project-product-row ci-row" data-item-id="${esc(item.id)}">
+            <a class="project-product-main ci-product" href="${productHref}"><div class="project-product-index ci-num">${String(index+1).padStart(2,'0')}</div><div><h3>${x?esc(x.name):'Producto'}</h3><p>${x?esc(x.brand):'Producto del catálogo'}</p></div></a>
+            <div class="project-summary ci-value"><strong>${esc(room)}</strong></div>
+            <div class="project-summary ci-value"><strong>${esc(unitLabel(qty,unit))}</strong></div>
+            <div class="project-summary ci-value"><strong>${esc(purchaseCaption)}</strong>${wasteActive&&waste?`<small>${waste}% de merma · ${esc(calcCaption)}</small>`:''}</div>
+            <div class="project-summary project-buy-result ci-value ci-buy"><strong>${esc(buyLabel)}</strong>${wasteActive&&waste?`<small>${esc(calculated.toFixed(3))} ${esc(unit)} con merma</small>`:''}</div>
+            <button type="button" class="project-edit-btn ci-edit" data-edit-item="${esc(item.id)}">Editar</button>
+            <div class="project-edit-panel ci-edit-panel">
+              <div class="project-edit-grid ci-form">
+                <div class="project-edit-field ci-field"><label>AMBIENTE</label><input data-edit-field="room" type="text" value="${escAttr(item.room||'')}" placeholder="Ej. Comedor"></div>
+                <div class="project-edit-field ci-field"><label>CANTIDAD</label><input data-edit-field="quantity" type="number" min="0" step="0.001" value="${qty}"></div>
+                <div class="project-edit-field ci-field"><label>UNIDAD</label><select data-edit-field="unit">${unitOptions.map(u=>`<option value="${u}" ${u===unit?'selected':''}>${u}</option>`).join('')}</select></div>
+                <div class="project-edit-field ci-field"><label>UNIDAD DE COMPRA</label><input data-edit-field="purchase_unit" type="text" value="${escAttr(purchaseUnit)}" placeholder="caja"></div>
+                <div class="project-edit-field ci-field"><label>CONTENIDO / UNIDAD</label><input data-edit-field="purchase_factor" type="number" min="0.001" step="0.001" value="${purchaseFactor}"></div>
+                <div class="project-edit-field ci-field"><label>MERMA</label><select data-edit-field="merma_mode"><option value="none" ${!wasteActive?'selected':''}>No aplicar</option><option value="percent" ${wasteActive?'selected':''}>Aplicar %</option></select></div>
               </div>
-              <div class="project-merma-editor" style="display:${wasteActive?'block':'none'};margin-top:12px;max-width:180px"><div class="project-edit-field"><label>PORCENTAJE DE MERMA</label><input data-edit-field="waste_percent" type="number" min="0" step="0.1" value="${waste}"></div></div>
+              <div class="project-merma-editor" style="display:${wasteActive?'block':'none'};margin-top:12px;max-width:180px"><div class="project-edit-field ci-field"><label>PORCENTAJE DE MERMA</label><input data-edit-field="waste_percent" type="number" min="0" step="0.1" value="${waste}"></div></div>
               <p class="project-edit-hint">Los resultados de compra se calculan automáticamente.</p>
-              <div class="project-edit-actions"><button type="button" class="project-cancel-btn" data-cancel-edit>Cancelar</button><button type="button" class="project-save-btn" data-save-edit>Guardar cambios</button></div>
+              <div class="project-edit-actions ci-actions"><button type="button" class="project-cancel-btn ci-cancel" data-cancel-edit>Cancelar</button><button type="button" class="project-save-btn ci-save" data-save-edit>Guardar cambios</button></div>
             </div>
           </article>`;
         }).join('')}
