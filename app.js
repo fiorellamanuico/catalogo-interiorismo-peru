@@ -418,9 +418,96 @@ function renderProjectPage(){
     const editor=panel?.querySelector('.project-merma-editor');
     if(editor) editor.style.display=sel.value==='percent'?'block':'none';
   }));
-  $('projectAddProduct')?.addEventListener('click',()=>{ location.href='index.html'; });
-  $('projectAddEmpty')?.addEventListener('click',()=>{ location.href='index.html'; });
+  $('projectAddProduct')?.addEventListener('click',()=>openProjectAddModal(project.id));
+  $('projectAddEmpty')?.addEventListener('click',()=>openProjectAddModal(project.id));
 }
+
+function openProjectAddModal(projectId){
+  if(!supabaseClient || !authUser || !projectsReady){ toast('Los proyectos todavía se están cargando.'); return; }
+  const project=state.projects.find(p=>String(p.id)===String(projectId));
+  if(!project) return;
+  document.querySelector('#projectAddModal')?.remove();
+
+  const modal=document.createElement('div');
+  modal.id='projectAddModal';
+  modal.innerHTML=`<div class="ci-add-backdrop" data-add-close></div>
+    <div class="ci-add-dialog" role="dialog" aria-modal="true" aria-labelledby="ciAddTitle">
+      <div class="ci-add-head"><div><p class="eyebrow">AGREGAR AL PROYECTO</p><h2 id="ciAddTitle">Añadir producto</h2><p>Selecciona un producto para <strong>${esc(project.name)}</strong>.</p></div><button type="button" class="ci-add-close" data-add-close aria-label="Cerrar">×</button></div>
+      <div class="ci-add-body">
+        <div class="ci-add-products">
+          <div class="ci-add-search"><input id="ciAddSearch" type="search" placeholder="Buscar producto, marca o categoría…" autocomplete="off"><select id="ciAddCategory"><option value="">Todas las categorías</option>${[...new Set(products.map(p=>p.category))].sort().map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')}</select></div>
+          <div id="ciAddList" class="ci-add-list"></div>
+        </div>
+        <div id="ciAddConfig" class="ci-add-config"><div class="ci-add-empty"><span>＋</span><strong>Selecciona un producto</strong><p>Luego podrás definir ambiente, cantidad, unidad y compra.</p></div></div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  const style=document.createElement('style');
+  style.id='ci-add-modal-style';
+  style.textContent=`#projectAddModal{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px}.ci-add-backdrop{position:absolute;inset:0;background:rgba(20,20,18,.28);backdrop-filter:blur(2px)}.ci-add-dialog{position:relative;width:min(980px,calc(100vw - 48px));max-height:min(760px,calc(100vh - 48px));background:#faf9f6;border:1px solid var(--line);box-shadow:0 24px 70px rgba(0,0,0,.12);display:flex;flex-direction:column}.ci-add-head{display:flex;justify-content:space-between;gap:24px;padding:28px 30px 22px;border-bottom:1px solid var(--line)}.ci-add-head h2{margin:0 0 5px;font-size:30px;font-weight:500}.ci-add-head p:not(.eyebrow){margin:0;font-size:11px;color:#777}.ci-add-close{width:34px;height:34px;border:1px solid var(--line);background:transparent;font-size:22px;line-height:1;cursor:pointer}.ci-add-body{display:grid;grid-template-columns:1.05fr .95fr;min-height:520px;overflow:hidden}.ci-add-products{padding:22px;border-right:1px solid var(--line);display:flex;flex-direction:column;min-width:0}.ci-add-search{display:grid;grid-template-columns:1fr 190px;gap:8px;margin-bottom:14px}.ci-add-search input,.ci-add-search select,.ci-add-field input,.ci-add-field select{height:40px;border:1px solid var(--line);background:#fff;padding:0 11px;font:inherit;font-size:11px;box-sizing:border-box}.ci-add-list{overflow:auto;display:flex;flex-direction:column;gap:6px;padding-right:4px}.ci-add-product{width:100%;display:flex;align-items:center;gap:12px;text-align:left;border:1px solid transparent;background:transparent;padding:9px;cursor:pointer;color:inherit}.ci-add-product:hover,.ci-add-product.is-selected{background:#f1eee8;border-color:var(--line)}.ci-add-product.is-added{opacity:.5;cursor:default}.ci-add-thumb{width:42px;height:42px;flex:0 0 42px;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,var(--t1),var(--t2));border:1px solid rgba(0,0,0,.05);font-size:13px;opacity:.9}.ci-add-thumb.large{width:58px;height:58px;flex-basis:58px;font-size:17px}.ci-add-product-copy{min-width:0;flex:1}.ci-add-product-copy strong{display:block;font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ci-add-product-copy small{display:block;margin-top:3px;color:#888;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ci-add-status{font-size:9px;color:#999}.ci-add-no-results{padding:28px 8px;color:#888;font-size:11px}.ci-add-config{padding:28px;overflow:auto}.ci-add-empty{height:100%;min-height:360px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#888}.ci-add-empty span{font-size:28px;margin-bottom:10px}.ci-add-empty strong{color:var(--ink);font-size:14px;font-weight:500}.ci-add-empty p{max-width:240px;font-size:10px;line-height:1.5}.ci-add-selected{display:flex;align-items:center;gap:14px;padding-bottom:22px;border-bottom:1px solid var(--line);margin-bottom:22px}.ci-add-selected h3{margin:0 0 3px;font-size:17px;font-weight:500}.ci-add-selected p:not(.eyebrow){margin:0;color:#888;font-size:9px}.ci-add-form{display:grid;grid-template-columns:1fr 1fr;gap:15px 12px}.ci-add-field{min-width:0}.ci-add-field label{display:block;margin-bottom:6px;font-size:8px;letter-spacing:.1em;color:#999}.ci-add-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:26px;padding-top:18px;border-top:1px solid var(--line)}.ci-add-cancel,.ci-add-save{height:38px;padding:0 15px;border:1px solid var(--line);background:transparent;font:inherit;font-size:10px;cursor:pointer}.ci-add-save{background:#151515;color:#fff;border-color:#151515}.ci-add-save:disabled{opacity:.55;cursor:wait}@media(max-width:760px){#projectAddModal{padding:12px}.ci-add-dialog{width:100%;max-height:calc(100vh - 24px)}.ci-add-body{grid-template-columns:1fr;overflow:auto}.ci-add-products{border-right:0;border-bottom:1px solid var(--line);max-height:42vh}.ci-add-config{padding:22px}.ci-add-search{grid-template-columns:1fr}.ci-add-form{grid-template-columns:1fr}.ci-add-head{padding:22px}}`;
+  document.head.appendChild(style);
+
+  const existingIds=new Set(projectItemsFor(project).map(i=>i.product_id));
+  let selected=null;
+  const renderList=()=>{
+    const q=($('ciAddSearch')?.value||'').trim().toLowerCase();
+    const cat=$('ciAddCategory')?.value||'';
+    const list=products.filter(p=>{
+      const hay=[p.name,p.brand,p.category,p.subcategory].join(' ').toLowerCase();
+      return (!q||hay.includes(q))&&(!cat||p.category===cat);
+    });
+    $('ciAddList').innerHTML=list.length?list.map(p=>{
+      const dbId=productDbIds.get(p.slug);
+      const already=existingIds.has(dbId);
+      const initial=(p.name||'P').trim().charAt(0).toUpperCase();
+      return `<button type="button" class="ci-add-product ${selected?.id===p.id?'is-selected':''} ${already?'is-added':''}" data-add-product="${p.id}" ${already?'disabled':''}><span class="ci-add-thumb" style="--t1:${escAttrValue(p.tone1||'#e6dfd3')};--t2:${escAttrValue(p.tone2||'#c8bcaa')}">${esc(initial)}</span><span class="ci-add-product-copy"><strong>${esc(p.name)}</strong><small>${esc(p.brand)} · ${esc(p.category)}</small></span><span class="ci-add-status">${already?'Ya está':''}${!already?'›':''}</span></button>`;
+    }).join(''):'<div class="ci-add-no-results">No encontramos productos con esos filtros.</div>';
+    $('ciAddList').querySelectorAll('[data-add-product]').forEach(btn=>btn.addEventListener('click',()=>selectProduct(Number(btn.dataset.addProduct))));
+  };
+  const selectProduct=(id)=>{
+    selected=products.find(p=>p.id===id)||null;
+    renderList();
+    if(!selected) return;
+    $('ciAddConfig').innerHTML=`<div class="ci-add-selected"><span class="ci-add-thumb large" style="--t1:${escAttrValue(selected.tone1||'#e6dfd3')};--t2:${escAttrValue(selected.tone2||'#c8bcaa')}">${esc((selected.name||'P').trim().charAt(0).toUpperCase())}</span><div><p class="eyebrow">PRODUCTO SELECCIONADO</p><h3>${esc(selected.name)}</h3><p>${esc(selected.brand)} · ${esc(selected.category)}</p></div></div>
+      <div class="ci-add-form">
+        <div class="ci-add-field"><label>AMBIENTE</label><input id="ciAddRoom" type="text" placeholder="Ej. Comedor"></div>
+        <div class="ci-add-field"><label>CANTIDAD</label><input id="ciAddQty" type="number" min="0" step="0.01" value="1"></div>
+        <div class="ci-add-field"><label>UNIDAD</label><select id="ciAddUnit"><option>und.</option><option>m²</option><option>m</option><option>ml</option><option>kg</option><option>g</option><option>l</option><option>set</option></select></div>
+        <div class="ci-add-field"><label>UNIDAD DE COMPRA</label><input id="ciAddPurchaseUnit" type="text" value="und."></div>
+        <div class="ci-add-field"><label>CONTENIDO / UNIDAD</label><input id="ciAddFactor" type="number" min="0.001" step="0.001" value="1"></div>
+        <div class="ci-add-field"><label>MERMA</label><select id="ciAddWasteMode"><option value="none">No aplicar</option><option value="percent">Aplicar %</option></select></div>
+        <div class="ci-add-field ci-add-waste-value" id="ciAddWasteWrap" style="display:none"><label>PORCENTAJE DE MERMA</label><input id="ciAddWaste" type="number" min="0" step="0.1" value="10"></div>
+      </div>
+      <div class="ci-add-actions"><button type="button" class="ci-add-cancel" data-add-close>Cancelar</button><button type="button" class="ci-add-save" id="ciAddSave">Agregar producto</button></div>`;
+    $('ciAddWasteMode').onchange=()=>{$('ciAddWasteWrap').style.display=$('ciAddWasteMode').value==='percent'?'block':'none'};
+    $('ciAddSave').onclick=async()=>{
+      const saveBtn=$('ciAddSave');
+      const productDbId=productDbIds.get(selected.slug);
+      if(!productDbId){toast('No encontramos este producto en Supabase.');return;}
+      if(existingIds.has(productDbId)){toast('Este producto ya está en el proyecto.');return;}
+      const room=($('ciAddRoom').value||'').trim()||null;
+      const quantity=Math.max(0,Number($('ciAddQty').value)||0);
+      const unit=$('ciAddUnit').value||'und.';
+      const purchaseUnit=($('ciAddPurchaseUnit').value||'').trim()||unit;
+      const purchaseFactor=Math.max(.001,Number($('ciAddFactor').value)||1);
+      const waste=$('ciAddWasteMode').value==='percent'?Math.max(0,Number($('ciAddWaste').value)||0):null;
+      const calculated=Number((quantity*(waste===null?1:1+waste/100)).toFixed(3));
+      const purchaseQuantity=Math.ceil(calculated/purchaseFactor);
+      saveBtn.disabled=true; saveBtn.textContent='Agregando…';
+      const {data:item,error}=await supabaseClient.from('project_items').insert({project_id:project.id,product_id:productDbId,room,quantity,unit,waste_percent:waste,calculated_quantity:calculated,purchase_unit:purchaseUnit,purchase_factor:purchaseFactor,purchase_quantity:purchaseQuantity}).select('id,project_id,product_id,room,quantity,unit,waste_percent,calculated_quantity,purchase_unit,purchase_factor,purchase_quantity,price,currency,supplier_name,quote_status,notes,added_by,created_at,updated_at').single();
+      if(error){console.error(error);saveBtn.disabled=false;saveBtn.textContent='Agregar producto';toast('No se pudo añadir el producto.');return;}
+      if(!projectDbItems.has(project.id)) projectDbItems.set(project.id,[]);
+      projectDbItems.get(project.id).push(item); project.items.push(selected.id); save(); updateCounts(); modal.remove(); renderProjects(); renderProjectPage(); toast(`“${selected.name}” añadido a “${project.name}”`);
+    };
+  };
+  modal.querySelectorAll('[data-add-close]').forEach(el=>el.addEventListener('click',()=>modal.remove()));
+  $('ciAddSearch').addEventListener('input',renderList);
+  $('ciAddCategory').addEventListener('change',renderList);
+  modal.addEventListener('keydown',e=>{if(e.key==='Escape')modal.remove()});
+  renderList();
+  $('ciAddSearch').focus();
+}
+function escAttrValue(v){return esc(v).replace(/"/g,'&quot;');}
 
 async function openProjectPicker(id){
   pendingProductId=id;
