@@ -490,7 +490,7 @@ function openProjectAddModal(projectId){
         <div class="ci-add-field"><label>CANTIDAD</label><input id="ciAddQty" type="number" min="0" step="1" value="1"></div>
         <div class="ci-add-field"><label>UNIDAD</label><select id="ciAddUnit"><option>und.</option><option>m²</option><option>m</option><option>ml</option><option>kg</option><option>g</option><option>l</option><option>set</option></select></div>
         <div class="ci-add-field"><label>UNIDAD DE COMPRA</label><input id="ciAddPurchaseUnit" type="text" value="und."></div>
-        <div class="ci-add-field"><label>CONTENIDO / UNIDAD</label><input id="ciAddFactor" type="number" min="0.001" step="0.001" value="1"></div>
+        <div class="ci-add-field"><label>CONTENIDO / UNIDAD</label><input id="ciAddFactor" type="number" min="0.001" step="0.001" value="1" inputmode="decimal"></div>
         <div class="ci-add-field"><label>MERMA</label><select id="ciAddWasteMode"><option value="none">No aplicar</option><option value="percent">Aplicar %</option></select></div>
         <div class="ci-add-field ci-add-waste-value" id="ciAddWasteWrap" style="display:none"><label>PORCENTAJE DE MERMA</label><input id="ciAddWaste" type="number" min="0" step="0.1" value="10"></div>
       </div>
@@ -512,7 +512,7 @@ function openProjectAddModal(projectId){
       const calculated=Number((quantity*(waste===null?1:1+waste/100)).toFixed(3));
       const purchaseQuantity=Math.ceil(calculated/purchaseFactor);
       saveBtn.disabled=true; saveBtn.textContent='Agregando…';
-      const {data:item,error}=await supabaseClient.from('project_items').insert({project_id:project.id,product_id:productDbId,room,quantity,unit,waste_percent:waste,calculated_quantity:calculated,purchase_unit:purchaseUnit,purchase_factor:purchaseFactor,purchase_quantity:purchaseQuantity}).select('id,project_id,product_id,room,quantity,unit,waste_percent,calculated_quantity,purchase_unit,purchase_factor,purchase_quantity,price,currency,supplier_name,quote_status,notes,added_by,created_at,updated_at').single();
+      const {data:item,error}=await supabaseClient.from('project_items').insert({project_id:project.id,product_id:productDbId,room,quantity,unit,waste_percent:waste,calculated_quantity:calculated,purchase_unit:purchaseUnit,purchase_factor:purchaseFactor,purchase_quantity:purchaseQuantity,added_by:authUser.id}).select('id,project_id,product_id,room,quantity,unit,waste_percent,calculated_quantity,purchase_unit,purchase_factor,purchase_quantity,price,currency,supplier_name,quote_status,notes,added_by,created_at,updated_at').single();
       if(error){console.error(error);saveBtn.disabled=false;saveBtn.textContent='Agregar producto';toast('No se pudo añadir el producto.');return;}
       if(!projectDbItems.has(project.id)) projectDbItems.set(project.id,[]);
       projectDbItems.get(project.id).push(item); project.items.push(selected.id); save(); updateCounts(); modal.remove(); renderProjects(); renderProjectPage(); toast(`“${selected.name}” añadido a “${project.name}”`);
