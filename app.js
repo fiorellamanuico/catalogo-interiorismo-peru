@@ -513,7 +513,7 @@ function openProjectAddModal(projectId){
       const purchaseQuantity=Math.ceil(calculated/purchaseFactor);
       saveBtn.disabled=true; saveBtn.textContent='Agregando…';
       const {data:item,error}=await supabaseClient.from('project_items').insert({project_id:project.id,product_id:productDbId,room,quantity,unit,waste_percent:waste,calculated_quantity:calculated,purchase_unit:purchaseUnit,purchase_factor:purchaseFactor,purchase_quantity:purchaseQuantity,added_by:authUser.id}).select('id,project_id,product_id,room,quantity,unit,waste_percent,calculated_quantity,purchase_unit,purchase_factor,purchase_quantity,price,currency,supplier_name,quote_status,notes,added_by,created_at,updated_at').single();
-      if(error){console.error(error);saveBtn.disabled=false;saveBtn.textContent='Agregar producto';toast('No se pudo añadir el producto.');return;}
+      if(error){console.error('project_items insert error:', error);saveBtn.disabled=false;saveBtn.textContent='Agregar producto';const detail=[error.message,error.code,error.details,error.hint].filter(Boolean).join(' · ');toast('Error al añadir: '+detail);return;}
       if(!projectDbItems.has(project.id)) projectDbItems.set(project.id,[]);
       projectDbItems.get(project.id).push(item); project.items.push(selected.id); save(); updateCounts(); modal.remove(); renderProjects(); renderProjectPage(); toast(`“${selected.name}” añadido a “${project.name}”`);
     };
@@ -550,12 +550,14 @@ async function openProjectPicker(id){
       unit:'und.',
       waste_percent:0,
       purchase_unit:'und.',
-      purchase_factor:1
+      purchase_factor:1,
+      added_by:authUser.id
     }).select('id,project_id,product_id,room,quantity,unit,waste_percent,calculated_quantity,purchase_unit,purchase_factor,purchase_quantity,price,currency,supplier_name,quote_status,notes,added_by,created_at,updated_at').single();
     if(error){
-      console.error(error);
+      console.error('project_items picker insert error:', error);
       b.disabled=false;
-      toast('No se pudo añadir el producto al proyecto.');
+      const detail=[error.message,error.code,error.details,error.hint].filter(Boolean).join(' · ');
+      toast('Error al añadir: '+detail);
       return;
     }
     if(!projectDbItems.has(project.id)) projectDbItems.set(project.id,[]);
