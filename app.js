@@ -275,7 +275,7 @@ function renderProjectPage(){
 
   mount.innerHTML=`<div class="project-page-wrap project-page-clean ci-project-v2">
     <style>
-      .ci-project-v2{width:100%!important;max-width:1220px!important;margin:0 auto!important;color:var(--ink)!important}
+      .ci-project-v2{width:min(1320px,calc(100% - 48px))!important;max-width:1320px!important;margin:0 auto!important;color:var(--ink)!important}
       .ci-project-v2 .ci-top{display:flex!important;justify-content:space-between!important;align-items:center!important;margin-bottom:28px!important}
       .ci-project-v2 .ci-heading{display:flex!important;justify-content:space-between!important;align-items:flex-end!important;border-bottom:1px solid var(--line)!important;padding-bottom:22px!important}
       .ci-project-v2 .ci-heading h1{margin:0 0 7px!important;font-size:clamp(48px,6vw,76px)!important;line-height:.98!important;font-weight:500!important}
@@ -285,20 +285,20 @@ function renderProjectPage(){
       .ci-project-v2 .ci-section-head h2{margin:0 0 4px!important;font-size:27px!important;font-weight:500!important}
       .ci-project-v2 .ci-note{margin:0!important;font-size:10px!important;color:#888!important}
       .ci-project-v2 .ci-table{width:100%!important;min-width:0!important}
-      .ci-project-v2 .ci-header,.ci-project-v2 .ci-row{display:grid!important;grid-template-columns:minmax(230px,2.25fr) minmax(110px,1.05fr) minmax(95px,.85fr) minmax(165px,1.45fr) minmax(110px,1fr) 68px!important;column-gap:22px!important;align-items:center!important;box-sizing:border-box!important}
+      .ci-project-v2 .ci-header,.ci-project-v2 .ci-row{display:grid!important;grid-template-columns:minmax(300px,2.7fr) minmax(120px,1.05fr) minmax(100px,.9fr) minmax(210px,1.55fr) minmax(120px,1.05fr) 72px!important;column-gap:24px!important;align-items:center!important;box-sizing:border-box!important}
       .ci-project-v2 .ci-header{padding:11px 0!important;border-bottom:1px solid var(--line)!important}
       .ci-project-v2 .ci-header span{font-size:8px!important;letter-spacing:.12em!important;color:#999!important}
       .ci-project-v2 .ci-row{position:relative!important;min-width:0!important;padding:18px 0!important;border-bottom:1px solid var(--line)!important;background:transparent!important}
       .ci-project-v2 .ci-product{display:flex!important;align-items:center!important;gap:12px!important;min-width:0!important;color:inherit!important;text-decoration:none!important}
-      .ci-project-v2 .ci-thumb{width:54px!important;height:54px!important;flex:0 0 54px!important;display:flex!important;align-items:center!important;justify-content:center!important;background:linear-gradient(145deg,var(--t1),var(--t2))!important;border:1px solid rgba(0,0,0,.05)!important}
-      .ci-project-v2 .ci-thumb span{font-size:15px!important;font-weight:500!important;opacity:.48!important}
+      .ci-project-v2 .ci-thumb{width:64px!important;height:64px!important;flex:0 0 64px!important;display:flex!important;align-items:center!important;justify-content:center!important;background:linear-gradient(145deg,var(--t1),var(--t2))!important;border:1px solid rgba(0,0,0,.05)!important}
+      .ci-project-v2 .ci-thumb span{font-size:17px!important;font-weight:500!important;opacity:.48!important}
       .ci-project-v2 .ci-num{width:20px!important;flex:0 0 20px!important;font-size:8px!important;color:#aaa!important}
       .ci-project-v2 .ci-product-copy{min-width:0!important}
       .ci-project-v2 .ci-product h3{margin:0 0 3px!important;font-size:14px!important;line-height:1.2!important;font-weight:500!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
       .ci-project-v2 .ci-product p{margin:0!important;font-size:9px!important;line-height:1.2!important;color:#888!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
-      .ci-project-v2 .ci-value{min-width:0!important;font-size:11px!important;line-height:1.35!important;color:var(--ink)!important;background:transparent!important;padding:0!important;border:0!important;overflow:visible!important}
+      .ci-project-v2 .ci-value{min-width:0!important;font-size:11px!important;line-height:1.35!important;color:var(--ink)!important;background:transparent!important;padding:0!important;border:0!important;overflow:visible!important;white-space:nowrap!important}
       .ci-project-v2 .ci-value strong{display:block!important;margin:0!important;padding:0!important;background:transparent!important;border:0!important;font-size:11px!important;line-height:1.35!important;font-weight:500!important;color:var(--ink)!important;white-space:nowrap!important}
-      .ci-project-v2 .ci-value small{display:block!important;margin:4px 0 0!important;padding:0!important;background:transparent!important;border:0!important;font-size:8px!important;line-height:1.25!important;color:#999!important;white-space:normal!important}
+      .ci-project-v2 .ci-value small{display:block!important;margin:4px 0 0!important;padding:0!important;background:transparent!important;border:0!important;font-size:8px!important;line-height:1.25!important;color:#999!important;white-space:nowrap!important}
       .ci-project-v2 .ci-buy strong{font-size:14px!important;font-weight:600!important}
       .ci-project-v2 .ci-edit{justify-self:end!important;border:1px solid var(--line)!important;background:transparent!important;color:var(--ink)!important;font:inherit!important;font-size:9px!important;padding:7px 10px!important;cursor:pointer!important;white-space:nowrap!important}
       .ci-project-v2 .ci-edit:hover{background:#fafafa!important}
@@ -312,7 +312,7 @@ function renderProjectPage(){
       .ci-project-v2 .ci-save{background:var(--ink)!important;color:#fff!important;border:0!important;padding:8px 13px!important;font:inherit!important;font-size:9px!important;cursor:pointer!important}
       .ci-project-v2 .ci-cancel{background:transparent!important;color:var(--ink)!important;border:1px solid var(--line)!important;padding:8px 13px!important;font:inherit!important;font-size:9px!important;cursor:pointer!important}
       .ci-project-v2 .ci-empty{padding:35px 0!important;border-top:1px solid var(--line)!important}
-      @media(max-width:1100px){.ci-project-v2 .ci-header,.ci-project-v2 .ci-row{grid-template-columns:minmax(190px,2fr) minmax(90px,.95fr) minmax(85px,.8fr) minmax(140px,1.25fr) minmax(95px,.9fr) 64px!important;column-gap:14px!important}.ci-project-v2 .ci-thumb{width:46px!important;height:46px!important;flex-basis:46px!important}}
+      @media(max-width:1100px){.ci-project-v2{width:calc(100% - 32px)!important}.ci-project-v2 .ci-header,.ci-project-v2 .ci-row{grid-template-columns:minmax(240px,2.3fr) minmax(100px,1fr) minmax(90px,.9fr) minmax(170px,1.35fr) minmax(105px,.95fr) 68px!important;column-gap:16px!important}.ci-project-v2 .ci-thumb{width:56px!important;height:56px!important;flex-basis:56px!important}}
       @media(max-width:760px){.ci-project-v2{padding:0 5vw 60px!important}.ci-project-v2 .ci-top,.ci-project-v2 .ci-heading,.ci-project-v2 .ci-section-head{display:block!important}.ci-project-v2 .ci-heading{padding-bottom:18px!important}.ci-project-v2 .ci-section{margin-top:40px!important}.ci-project-v2 .ci-header{display:none!important}.ci-project-v2 .ci-row{display:grid!important;grid-template-columns:1fr 1fr!important;row-gap:14px!important;column-gap:16px!important;padding:18px 0!important}.ci-project-v2 .ci-product{grid-column:1/-1!important}.ci-project-v2 .ci-value:nth-of-type(2){grid-column:1!important}.ci-project-v2 .ci-value:nth-of-type(3){grid-column:2!important}.ci-project-v2 .ci-value:nth-of-type(4){grid-column:1/-1!important}.ci-project-v2 .ci-buy{grid-column:1!important}.ci-project-v2 .ci-edit{grid-column:2!important;justify-self:end!important}.ci-project-v2 .ci-edit-panel{grid-column:1/-1!important}.ci-project-v2 .ci-form{grid-template-columns:1fr 1fr!important}.ci-project-v2 .ci-actions{justify-content:flex-start!important}}
     </style>
 
