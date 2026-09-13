@@ -263,9 +263,19 @@ function renderProjectPage(){
   const cleanNumber=(n)=>Number.isInteger(Number(n))?String(Number(n)):String(Number(Number(n).toFixed(3)));
   const purchaseName=(u,n)=>{
     const q=Number(n);
-    if(u==='und.') return q===1?'1 und.':`${cleanNumber(q)} und.`;
-    if(u==='set') return q===1?'1 set':`${cleanNumber(q)} sets`;
-    return `${cleanNumber(q)} ${u}`;
+    const singular={
+      'und.':'und.', 'set':'set', 'caja':'caja', 'rollo':'rollo', 'pieza':'pieza',
+      'saco':'saco', 'paquete':'paquete', 'bolsa':'bolsa', 'm':'m', 'ml':'ml',
+      'm²':'m²', 'kg':'kg', 'g':'g', 'l':'l'
+    };
+    const plural={
+      'und.':'und.', 'set':'sets', 'caja':'cajas', 'rollo':'rollos', 'pieza':'piezas',
+      'saco':'sacos', 'paquete':'paquetes', 'bolsa':'bolsas', 'm':'m', 'ml':'ml',
+      'm²':'m²', 'kg':'kg', 'g':'g', 'l':'l'
+    };
+    const key=String(u||'und.').trim().toLowerCase();
+    if(q===1) return `1 ${singular[key]||key}`;
+    return `${cleanNumber(q)} ${plural[key]||key}`;
   };
   const thumb=(x)=>{
     const tone1=x?.tone1||'#e6dfd3', tone2=x?.tone2||'#c8bcaa';
@@ -275,17 +285,17 @@ function renderProjectPage(){
 
   mount.innerHTML=`<div class="project-page-wrap project-page-clean ci-project-v2">
     <style>
-      .ci-project-v2{width:min(1320px,calc(100% - 48px))!important;max-width:1320px!important;margin:0 auto!important;color:var(--ink)!important}
+      .ci-project-v2{width:min(1320px,calc(100% - 64px))!important;max-width:1320px!important;margin:0 auto!important;color:var(--ink)!important}
       .ci-project-v2 .ci-top{display:flex!important;justify-content:space-between!important;align-items:center!important;margin-bottom:28px!important}
       .ci-project-v2 .ci-heading{display:flex!important;justify-content:space-between!important;align-items:flex-end!important;border-bottom:1px solid var(--line)!important;padding-bottom:22px!important}
       .ci-project-v2 .ci-heading h1{margin:0 0 7px!important;font-size:clamp(48px,6vw,76px)!important;line-height:.98!important;font-weight:500!important}
       .ci-project-v2 .ci-meta{margin:0!important;font-size:11px!important;color:#777!important}
-      .ci-project-v2 .ci-section{margin-top:52px!important}
+      .ci-project-v2 .ci-section{margin-top:52px!important;width:100%!important;max-width:none!important}
       .ci-project-v2 .ci-section-head{display:flex!important;justify-content:space-between!important;align-items:flex-end!important;border-bottom:1px solid var(--line)!important;padding-bottom:14px!important}
       .ci-project-v2 .ci-section-head h2{margin:0 0 4px!important;font-size:27px!important;font-weight:500!important}
       .ci-project-v2 .ci-note{margin:0!important;font-size:10px!important;color:#888!important}
       .ci-project-v2 .ci-table{width:100%!important;min-width:0!important}
-      .ci-project-v2 .ci-header,.ci-project-v2 .ci-row{display:grid!important;grid-template-columns:minmax(300px,2.7fr) minmax(120px,1.05fr) minmax(100px,.9fr) minmax(210px,1.55fr) minmax(120px,1.05fr) 72px!important;column-gap:24px!important;align-items:center!important;box-sizing:border-box!important}
+      .ci-project-v2 .ci-header,.ci-project-v2 .ci-row{display:grid!important;grid-template-columns:minmax(0,2.45fr) minmax(90px,1fr) minmax(90px,.9fr) minmax(145px,1.35fr) minmax(105px,1.05fr) 42px!important;column-gap:18px!important;align-items:center!important;box-sizing:border-box!important}
       .ci-project-v2 .ci-header{padding:11px 0!important;border-bottom:1px solid var(--line)!important}
       .ci-project-v2 .ci-header span{font-size:8px!important;letter-spacing:.12em!important;color:#999!important}
       .ci-project-v2 .ci-row{position:relative!important;min-width:0!important;padding:18px 0!important;border-bottom:1px solid var(--line)!important;background:transparent!important}
@@ -300,8 +310,9 @@ function renderProjectPage(){
       .ci-project-v2 .ci-value strong{display:block!important;margin:0!important;padding:0!important;background:transparent!important;border:0!important;font-size:11px!important;line-height:1.35!important;font-weight:500!important;color:var(--ink)!important;white-space:nowrap!important}
       .ci-project-v2 .ci-value small{display:block!important;margin:4px 0 0!important;padding:0!important;background:transparent!important;border:0!important;font-size:8px!important;line-height:1.25!important;color:#999!important;white-space:nowrap!important}
       .ci-project-v2 .ci-buy strong{font-size:14px!important;font-weight:600!important}
-      .ci-project-v2 .ci-edit{justify-self:end!important;border:1px solid var(--line)!important;background:transparent!important;color:var(--ink)!important;font:inherit!important;font-size:9px!important;padding:7px 10px!important;cursor:pointer!important;white-space:nowrap!important}
+      .ci-project-v2 .ci-edit{justify-self:end!important;width:34px!important;height:34px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;border:1px solid var(--line)!important;background:transparent!important;color:var(--ink)!important;font:inherit!important;font-size:16px!important;line-height:1!important;padding:0!important;cursor:pointer!important;white-space:nowrap!important}
       .ci-project-v2 .ci-edit:hover{background:#fafafa!important}
+      .ci-project-v2 .ci-edit svg{width:15px!important;height:15px!important;display:block!important}
       .ci-project-v2 .ci-edit-panel{grid-column:1/-1!important;display:none!important;border-top:1px solid var(--line)!important;padding:18px 0 2px!important;margin-top:18px!important;background:transparent!important}
       .ci-project-v2 .ci-row.is-editing .ci-edit-panel{display:block!important}
       .ci-project-v2 .ci-form{display:grid!important;grid-template-columns:1.3fr .8fr .7fr 1fr .9fr 1fr!important;gap:12px!important;align-items:end!important}
@@ -312,7 +323,7 @@ function renderProjectPage(){
       .ci-project-v2 .ci-save{background:var(--ink)!important;color:#fff!important;border:0!important;padding:8px 13px!important;font:inherit!important;font-size:9px!important;cursor:pointer!important}
       .ci-project-v2 .ci-cancel{background:transparent!important;color:var(--ink)!important;border:1px solid var(--line)!important;padding:8px 13px!important;font:inherit!important;font-size:9px!important;cursor:pointer!important}
       .ci-project-v2 .ci-empty{padding:35px 0!important;border-top:1px solid var(--line)!important}
-      @media(max-width:1100px){.ci-project-v2{width:calc(100% - 32px)!important}.ci-project-v2 .ci-header,.ci-project-v2 .ci-row{grid-template-columns:minmax(240px,2.3fr) minmax(100px,1fr) minmax(90px,.9fr) minmax(170px,1.35fr) minmax(105px,.95fr) 68px!important;column-gap:16px!important}.ci-project-v2 .ci-thumb{width:56px!important;height:56px!important;flex-basis:56px!important}}
+      @media(max-width:1100px){.ci-project-v2{width:calc(100% - 32px)!important}.ci-project-v2 .ci-header,.ci-project-v2 .ci-row{grid-template-columns:minmax(0,2.2fr) minmax(80px,1fr) minmax(80px,.9fr) minmax(125px,1.25fr) minmax(95px,.95fr) 40px!important;column-gap:14px!important}.ci-project-v2 .ci-thumb{width:56px!important;height:56px!important;flex-basis:56px!important}}
       @media(max-width:760px){.ci-project-v2{padding:0 5vw 60px!important}.ci-project-v2 .ci-top,.ci-project-v2 .ci-heading,.ci-project-v2 .ci-section-head{display:block!important}.ci-project-v2 .ci-heading{padding-bottom:18px!important}.ci-project-v2 .ci-section{margin-top:40px!important}.ci-project-v2 .ci-header{display:none!important}.ci-project-v2 .ci-row{display:grid!important;grid-template-columns:1fr 1fr!important;row-gap:14px!important;column-gap:16px!important;padding:18px 0!important}.ci-project-v2 .ci-product{grid-column:1/-1!important}.ci-project-v2 .ci-value:nth-of-type(2){grid-column:1!important}.ci-project-v2 .ci-value:nth-of-type(3){grid-column:2!important}.ci-project-v2 .ci-value:nth-of-type(4){grid-column:1/-1!important}.ci-project-v2 .ci-buy{grid-column:1!important}.ci-project-v2 .ci-edit{grid-column:2!important;justify-self:end!important}.ci-project-v2 .ci-edit-panel{grid-column:1/-1!important}.ci-project-v2 .ci-form{grid-template-columns:1fr 1fr!important}.ci-project-v2 .ci-actions{justify-content:flex-start!important}}
     </style>
 
@@ -324,7 +335,7 @@ function renderProjectPage(){
     </div>
 
     <section class="project-products-section ci-section">
-      <div class="project-section-heading ci-section-head"><div><p class="eyebrow">ESPECIFICACIÓN</p><h2>Productos del proyecto</h2><p class="project-edit-note ci-note">Una vista limpia de lo esencial. Pulsa “Editar” para cambiar cantidades, compra o merma.</p></div><span>${items.length} ${items.length===1?'producto':'productos'}</span></div>
+      <div class="project-section-heading ci-section-head"><div><p class="eyebrow">ESPECIFICACIÓN</p><h2>Productos del proyecto</h2><p class="project-edit-note ci-note">Una vista limpia de lo esencial. Usa el lápiz para cambiar cantidades, compra o merma.</p></div><span>${items.length} ${items.length===1?'producto':'productos'}</span></div>
       ${items.length?`<div class="project-products-list ci-table">
         <div class="project-col-head ci-header"><span>PRODUCTO</span><span>AMBIENTE</span><span>CANTIDAD</span><span>COMPRA</span><span>A COMPRAR</span><span></span></div>
         ${items.map((item,index)=>{
@@ -350,7 +361,7 @@ function renderProjectPage(){
             <div class="project-summary ci-value"><strong>${esc(`${cleanNumber(qty)} ${unit}`)}</strong></div>
             <div class="project-summary ci-value"><strong>${purchaseCaption}</strong>${purchaseSub?`<small>${esc(purchaseSub)}</small>`:''}</div>
             <div class="project-summary project-buy-result ci-value ci-buy"><strong>${esc(buyLabel)}</strong>${wasteActive&&waste?`<small>${esc(`${cleanNumber(calculated)} ${unit} con merma`)}</small>`:''}</div>
-            <button type="button" class="project-edit-btn ci-edit" data-edit-item="${esc(item.id)}">Editar</button>
+            <button type="button" class="project-edit-btn ci-edit" data-edit-item="${esc(item.id)}" aria-label="Editar ${escAttr(x?x.name:'producto')}" title="Editar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 16.5V20h3.5L18.8 8.7l-3.5-3.5L4 16.5Zm12.8-12.8 3.5 3.5 1.1-1.1a1.5 1.5 0 0 0 0-2.1l-1.4-1.4a1.5 1.5 0 0 0-2.1 0l-1.1 1.1Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></button>
             <div class="project-edit-panel ci-edit-panel">
               <div class="project-edit-grid ci-form">
                 <div class="project-edit-field ci-field"><label>AMBIENTE</label><input data-edit-field="room" type="text" value="${escAttr(item.room||'')}" placeholder="Ej. Comedor"></div>
