@@ -258,49 +258,62 @@ function renderProjectPage(){
 
   const items=projectItemsFor(project);
   document.title=`${project.name} · Proyecto | Catálogo Interiorismo Perú`;
-
   const unitOptions=['und.','m²','m','ml','kg','g','l','set'];
   const escAttr=(v)=>esc(v).replace(/"/g,'&quot;');
-  const unitLabel=(u,n)=>`${n} ${u}`;
-  const purchaseLabel=(n,u)=>`${n} ${u}${Number(n)===1?'':'s'}`;
+  const cleanNumber=(n)=>Number.isInteger(Number(n))?String(Number(n)):String(Number(Number(n).toFixed(3)));
+  const purchaseName=(u,n)=>{
+    const q=Number(n);
+    if(u==='und.') return q===1?'1 und.':`${cleanNumber(q)} und.`;
+    if(u==='set') return q===1?'1 set':`${cleanNumber(q)} sets`;
+    return `${cleanNumber(q)} ${u}`;
+  };
+  const thumb=(x)=>{
+    const tone1=x?.tone1||'#e6dfd3', tone2=x?.tone2||'#c8bcaa';
+    const initial=(x?.name||'P').trim().charAt(0).toUpperCase();
+    return `<span class="ci-thumb" style="--t1:${escAttr(tone1)};--t2:${escAttr(tone2)}"><span>${esc(initial)}</span></span>`;
+  };
 
-  mount.innerHTML=`<div class="project-page-wrap project-page-clean ci-project">
+  mount.innerHTML=`<div class="project-page-wrap project-page-clean ci-project-v2">
     <style>
-      .ci-project{width:100%!important;max-width:1180px!important;margin:0 auto!important;color:var(--ink)!important}
-      .ci-project .ci-top{display:flex!important;justify-content:space-between!important;align-items:center!important;margin-bottom:28px!important}
-      .ci-project .ci-heading{display:flex!important;justify-content:space-between!important;align-items:flex-end!important;border-bottom:1px solid var(--line)!important;padding-bottom:22px!important}
-      .ci-project .ci-heading h1{margin:0 0 7px!important;font-size:clamp(48px,6vw,76px)!important;line-height:.98!important;font-weight:500!important}
-      .ci-project .ci-meta{margin:0!important;font-size:11px!important;color:#777!important}
-      .ci-project .ci-section{margin-top:54px!important}
-      .ci-project .ci-section-head{display:flex!important;justify-content:space-between!important;align-items:flex-end!important;border-bottom:1px solid var(--line)!important;padding-bottom:14px!important}
-      .ci-project .ci-section-head h2{margin:0 0 4px!important;font-size:27px!important;font-weight:500!important}
-      .ci-project .ci-note{margin:0!important;font-size:10px!important;color:#888!important}
-      .ci-project .ci-table{width:100%!important;min-width:0!important}.ci-project .ci-row>*{min-width:0!important}.ci-project .ci-header>*{min-width:0!important}
-      .ci-project .ci-header,.ci-project .ci-row{display:grid!important;grid-template-columns:minmax(0,2.35fr) minmax(0,1.15fr) minmax(0,.9fr) minmax(0,1.45fr) minmax(0,1fr) 70px!important;column-gap:18px!important;align-items:center!important}
-      .ci-project .ci-header{padding:10px 0!important;border-bottom:1px solid var(--line)!important}
-      .ci-project .ci-header span{font-size:8px!important;letter-spacing:.12em!important;color:#999!important}
-      .ci-project .ci-row{position:relative!important;min-width:0!important;padding:20px 0!important;border-bottom:1px solid var(--line)!important;background:transparent!important}
-      .ci-project .ci-product{display:flex!important;align-items:center!important;gap:12px!important;min-width:0!important;color:inherit!important;text-decoration:none!important;background:transparent!important}
-      .ci-project .ci-num{width:22px!important;flex:0 0 22px!important;font-size:9px!important;color:#aaa!important}
-      .ci-project .ci-product h3{margin:0 0 3px!important;font-size:14px!important;line-height:1.2!important;font-weight:500!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
-      .ci-project .ci-product p{margin:0!important;font-size:9px!important;line-height:1.2!important;color:#888!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
-      .ci-project .ci-value{min-width:0!important;font-size:11px!important;line-height:1.35!important;color:var(--ink)!important;background:transparent!important;padding:0!important;border:0!important}
-      .ci-project .ci-value strong{display:block!important;margin:0!important;padding:0!important;background:transparent!important;border:0!important;font-size:11px!important;line-height:1.35!important;font-weight:500!important;color:var(--ink)!important}
-      .ci-project .ci-value small{display:block!important;margin:4px 0 0!important;padding:0!important;background:transparent!important;border:0!important;font-size:8px!important;line-height:1.3!important;color:#999!important}
-      .ci-project .ci-buy strong{font-size:13px!important;font-weight:600!important;white-space:normal!important}.ci-project .ci-value strong{overflow-wrap:anywhere!important}
-      .ci-project .ci-edit{border:1px solid var(--line)!important;background:transparent!important;color:var(--ink)!important;font:inherit!important;font-size:9px!important;padding:7px 9px!important;cursor:pointer!important;white-space:nowrap!important}
-      .ci-project .ci-edit-panel{grid-column:1/-1!important;display:none!important;border-top:1px solid var(--line)!important;padding:18px 0 2px!important;margin-top:18px!important;background:transparent!important}
-      .ci-project .ci-row.is-editing .ci-edit-panel{display:block!important}
-      .ci-project .ci-form{display:grid!important;grid-template-columns:1.3fr .8fr .7fr 1fr .9fr 1fr!important;gap:12px!important;align-items:end!important}
-      .ci-project .ci-field{display:flex!important;flex-direction:column!important;gap:6px!important;min-width:0!important}
-      .ci-project .ci-field label{font-size:8px!important;letter-spacing:.09em!important;color:#999!important}
-      .ci-project .ci-field input,.ci-project .ci-field select{width:100%!important;height:34px!important;box-sizing:border-box!important;border:1px solid var(--line)!important;background:#fff!important;padding:8px 9px!important;font:inherit!important;font-size:10px!important;color:var(--ink)!important;outline:none!important;border-radius:0!important}
-      .ci-project .ci-actions{display:flex!important;justify-content:flex-end!important;gap:8px!important;margin-top:13px!important}
-      .ci-project .ci-save{background:var(--ink)!important;color:#fff!important;border:0!important;padding:8px 13px!important;font:inherit!important;font-size:9px!important;cursor:pointer!important}
-      .ci-project .ci-cancel{background:transparent!important;color:var(--ink)!important;border:1px solid var(--line)!important;padding:8px 13px!important;font:inherit!important;font-size:9px!important;cursor:pointer!important}
-      .ci-project .ci-empty{padding:35px 0!important;border-top:1px solid var(--line)!important}
-      @media(max-width:1050px){.ci-project .ci-header,.ci-project .ci-row{grid-template-columns:minmax(0,2.2fr) minmax(0,1.05fr) minmax(0,.9fr) minmax(0,1.35fr) minmax(0,1fr) 66px!important;column-gap:14px!important}}
-      @media(max-width:760px){.ci-project{padding:0 5vw 60px!important}.ci-project .ci-top,.ci-project .ci-heading,.ci-project .ci-section-head{display:block!important}.ci-project .ci-heading{padding-bottom:18px!important}.ci-project .ci-section{margin-top:40px!important}.ci-project .ci-header{display:none!important}.ci-project .ci-row{display:grid!important;grid-template-columns:1fr 1fr!important;row-gap:14px!important;column-gap:16px!important}.ci-project .ci-product{grid-column:1/-1!important}.ci-project .ci-value:nth-of-type(2){grid-column:1!important}.ci-project .ci-value:nth-of-type(3){grid-column:2!important}.ci-project .ci-value:nth-of-type(4){grid-column:1!important}.ci-project .ci-buy{grid-column:2!important}.ci-project .ci-edit{grid-column:1/-1!important;justify-self:start!important}.ci-project .ci-edit-panel{grid-column:1/-1!important}.ci-project .ci-form{grid-template-columns:1fr 1fr!important}.ci-project .ci-actions{justify-content:flex-start!important}}
+      .ci-project-v2{width:100%!important;max-width:1220px!important;margin:0 auto!important;color:var(--ink)!important}
+      .ci-project-v2 .ci-top{display:flex!important;justify-content:space-between!important;align-items:center!important;margin-bottom:28px!important}
+      .ci-project-v2 .ci-heading{display:flex!important;justify-content:space-between!important;align-items:flex-end!important;border-bottom:1px solid var(--line)!important;padding-bottom:22px!important}
+      .ci-project-v2 .ci-heading h1{margin:0 0 7px!important;font-size:clamp(48px,6vw,76px)!important;line-height:.98!important;font-weight:500!important}
+      .ci-project-v2 .ci-meta{margin:0!important;font-size:11px!important;color:#777!important}
+      .ci-project-v2 .ci-section{margin-top:52px!important}
+      .ci-project-v2 .ci-section-head{display:flex!important;justify-content:space-between!important;align-items:flex-end!important;border-bottom:1px solid var(--line)!important;padding-bottom:14px!important}
+      .ci-project-v2 .ci-section-head h2{margin:0 0 4px!important;font-size:27px!important;font-weight:500!important}
+      .ci-project-v2 .ci-note{margin:0!important;font-size:10px!important;color:#888!important}
+      .ci-project-v2 .ci-table{width:100%!important;min-width:0!important}
+      .ci-project-v2 .ci-header,.ci-project-v2 .ci-row{display:grid!important;grid-template-columns:minmax(230px,2.25fr) minmax(110px,1.05fr) minmax(95px,.85fr) minmax(165px,1.45fr) minmax(110px,1fr) 68px!important;column-gap:22px!important;align-items:center!important;box-sizing:border-box!important}
+      .ci-project-v2 .ci-header{padding:11px 0!important;border-bottom:1px solid var(--line)!important}
+      .ci-project-v2 .ci-header span{font-size:8px!important;letter-spacing:.12em!important;color:#999!important}
+      .ci-project-v2 .ci-row{position:relative!important;min-width:0!important;padding:18px 0!important;border-bottom:1px solid var(--line)!important;background:transparent!important}
+      .ci-project-v2 .ci-product{display:flex!important;align-items:center!important;gap:12px!important;min-width:0!important;color:inherit!important;text-decoration:none!important}
+      .ci-project-v2 .ci-thumb{width:54px!important;height:54px!important;flex:0 0 54px!important;display:flex!important;align-items:center!important;justify-content:center!important;background:linear-gradient(145deg,var(--t1),var(--t2))!important;border:1px solid rgba(0,0,0,.05)!important}
+      .ci-project-v2 .ci-thumb span{font-size:15px!important;font-weight:500!important;opacity:.48!important}
+      .ci-project-v2 .ci-num{width:20px!important;flex:0 0 20px!important;font-size:8px!important;color:#aaa!important}
+      .ci-project-v2 .ci-product-copy{min-width:0!important}
+      .ci-project-v2 .ci-product h3{margin:0 0 3px!important;font-size:14px!important;line-height:1.2!important;font-weight:500!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+      .ci-project-v2 .ci-product p{margin:0!important;font-size:9px!important;line-height:1.2!important;color:#888!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+      .ci-project-v2 .ci-value{min-width:0!important;font-size:11px!important;line-height:1.35!important;color:var(--ink)!important;background:transparent!important;padding:0!important;border:0!important;overflow:visible!important}
+      .ci-project-v2 .ci-value strong{display:block!important;margin:0!important;padding:0!important;background:transparent!important;border:0!important;font-size:11px!important;line-height:1.35!important;font-weight:500!important;color:var(--ink)!important;white-space:nowrap!important}
+      .ci-project-v2 .ci-value small{display:block!important;margin:4px 0 0!important;padding:0!important;background:transparent!important;border:0!important;font-size:8px!important;line-height:1.25!important;color:#999!important;white-space:normal!important}
+      .ci-project-v2 .ci-buy strong{font-size:14px!important;font-weight:600!important}
+      .ci-project-v2 .ci-edit{justify-self:end!important;border:1px solid var(--line)!important;background:transparent!important;color:var(--ink)!important;font:inherit!important;font-size:9px!important;padding:7px 10px!important;cursor:pointer!important;white-space:nowrap!important}
+      .ci-project-v2 .ci-edit:hover{background:#fafafa!important}
+      .ci-project-v2 .ci-edit-panel{grid-column:1/-1!important;display:none!important;border-top:1px solid var(--line)!important;padding:18px 0 2px!important;margin-top:18px!important;background:transparent!important}
+      .ci-project-v2 .ci-row.is-editing .ci-edit-panel{display:block!important}
+      .ci-project-v2 .ci-form{display:grid!important;grid-template-columns:1.3fr .8fr .7fr 1fr .9fr 1fr!important;gap:12px!important;align-items:end!important}
+      .ci-project-v2 .ci-field{display:flex!important;flex-direction:column!important;gap:6px!important;min-width:0!important}
+      .ci-project-v2 .ci-field label{font-size:8px!important;letter-spacing:.09em!important;color:#999!important}
+      .ci-project-v2 .ci-field input,.ci-project-v2 .ci-field select{width:100%!important;height:34px!important;box-sizing:border-box!important;border:1px solid var(--line)!important;background:#fff!important;padding:8px 9px!important;font:inherit!important;font-size:10px!important;color:var(--ink)!important;outline:none!important;border-radius:0!important}
+      .ci-project-v2 .ci-actions{display:flex!important;justify-content:flex-end!important;gap:8px!important;margin-top:13px!important}
+      .ci-project-v2 .ci-save{background:var(--ink)!important;color:#fff!important;border:0!important;padding:8px 13px!important;font:inherit!important;font-size:9px!important;cursor:pointer!important}
+      .ci-project-v2 .ci-cancel{background:transparent!important;color:var(--ink)!important;border:1px solid var(--line)!important;padding:8px 13px!important;font:inherit!important;font-size:9px!important;cursor:pointer!important}
+      .ci-project-v2 .ci-empty{padding:35px 0!important;border-top:1px solid var(--line)!important}
+      @media(max-width:1100px){.ci-project-v2 .ci-header,.ci-project-v2 .ci-row{grid-template-columns:minmax(190px,2fr) minmax(90px,.95fr) minmax(85px,.8fr) minmax(140px,1.25fr) minmax(95px,.9fr) 64px!important;column-gap:14px!important}.ci-project-v2 .ci-thumb{width:46px!important;height:46px!important;flex-basis:46px!important}}
+      @media(max-width:760px){.ci-project-v2{padding:0 5vw 60px!important}.ci-project-v2 .ci-top,.ci-project-v2 .ci-heading,.ci-project-v2 .ci-section-head{display:block!important}.ci-project-v2 .ci-heading{padding-bottom:18px!important}.ci-project-v2 .ci-section{margin-top:40px!important}.ci-project-v2 .ci-header{display:none!important}.ci-project-v2 .ci-row{display:grid!important;grid-template-columns:1fr 1fr!important;row-gap:14px!important;column-gap:16px!important;padding:18px 0!important}.ci-project-v2 .ci-product{grid-column:1/-1!important}.ci-project-v2 .ci-value:nth-of-type(2){grid-column:1!important}.ci-project-v2 .ci-value:nth-of-type(3){grid-column:2!important}.ci-project-v2 .ci-value:nth-of-type(4){grid-column:1/-1!important}.ci-project-v2 .ci-buy{grid-column:1!important}.ci-project-v2 .ci-edit{grid-column:2!important;justify-self:end!important}.ci-project-v2 .ci-edit-panel{grid-column:1/-1!important}.ci-project-v2 .ci-form{grid-template-columns:1fr 1fr!important}.ci-project-v2 .ci-actions{justify-content:flex-start!important}}
     </style>
 
     <div class="project-page-top ci-top"><a class="back-link" href="index.html">← Volver al catálogo</a><button class="project-top-action" id="projectAddProduct">＋ Agregar producto</button></div>
@@ -311,7 +324,7 @@ function renderProjectPage(){
     </div>
 
     <section class="project-products-section ci-section">
-      <div class="project-section-heading ci-section-head"><div><p class="eyebrow">ESPECIFICACIÓN</p><h2>Productos del proyecto</h2><p class="project-edit-note ci-note">Cada producto muestra solo lo esencial. Pulsa “Editar” cuando quieras cambiar cantidades, compra o merma.</p></div><span>${items.length} ${items.length===1?'producto':'productos'}</span></div>
+      <div class="project-section-heading ci-section-head"><div><p class="eyebrow">ESPECIFICACIÓN</p><h2>Productos del proyecto</h2><p class="project-edit-note ci-note">Una vista limpia de lo esencial. Pulsa “Editar” para cambiar cantidades, compra o merma.</p></div><span>${items.length} ${items.length===1?'producto':'productos'}</span></div>
       ${items.length?`<div class="project-products-list ci-table">
         <div class="project-col-head ci-header"><span>PRODUCTO</span><span>AMBIENTE</span><span>CANTIDAD</span><span>COMPRA</span><span>A COMPRAR</span><span></span></div>
         ${items.map((item,index)=>{
@@ -326,15 +339,17 @@ function renderProjectPage(){
           const purchaseFactor=Number(item.purchase_factor)||1;
           const purchaseQty=purchaseFactor>0?Math.ceil(calculated/purchaseFactor):0;
           const room=item.room||'—';
-          const purchaseCaption=purchaseFactor>0?`${purchaseUnit} · ${Number(purchaseFactor.toFixed(3))} ${unit}/${purchaseUnit}`:'—';
-          const calcCaption=wasteActive&&waste?`${Number(calculated.toFixed(3))} ${unit} con ${waste}% de merma.`:`${Number(calculated.toFixed(3))} ${unit}`;
-          const buyLabel=purchaseLabel(purchaseQty,purchaseUnit);
+          const purchaseCaption=(purchaseUnit!==unit || purchaseFactor!==1)
+            ? `${cleanNumber(purchaseFactor)} ${unit} / ${purchaseUnit}`
+            : `Por unidad`;
+          const purchaseSub=wasteActive&&waste?`${cleanNumber(waste)}% · ${cleanNumber(calculated)} ${unit}`:'';
+          const buyLabel=purchaseName(purchaseUnit,purchaseQty);
           return `<article class="project-product-row ci-row" data-item-id="${esc(item.id)}">
-            <a class="project-product-main ci-product" href="${productHref}"><div class="project-product-index ci-num">${String(index+1).padStart(2,'0')}</div><div><h3>${x?esc(x.name):'Producto'}</h3><p>${x?esc(x.brand):'Producto del catálogo'}</p></div></a>
+            <a class="project-product-main ci-product" href="${productHref}"><div class="project-product-index ci-num">${String(index+1).padStart(2,'0')}</div>${thumb(x)}<div class="ci-product-copy"><h3>${x?esc(x.name):'Producto'}</h3><p>${x?esc(x.brand):'Producto del catálogo'}</p></div></a>
             <div class="project-summary ci-value"><strong>${esc(room)}</strong></div>
-            <div class="project-summary ci-value"><strong>${esc(unitLabel(qty,unit))}</strong></div>
-            <div class="project-summary ci-value"><strong>${esc(purchaseCaption)}</strong>${wasteActive&&waste?`<small>${waste}% de merma · ${esc(calcCaption)}</small>`:''}</div>
-            <div class="project-summary project-buy-result ci-value ci-buy"><strong>${esc(buyLabel)}</strong>${wasteActive&&waste?`<small>${esc(calculated.toFixed(3))} ${esc(unit)} con merma</small>`:''}</div>
+            <div class="project-summary ci-value"><strong>${esc(`${cleanNumber(qty)} ${unit}`)}</strong></div>
+            <div class="project-summary ci-value"><strong>${purchaseCaption}</strong>${purchaseSub?`<small>${esc(purchaseSub)}</small>`:''}</div>
+            <div class="project-summary project-buy-result ci-value ci-buy"><strong>${esc(buyLabel)}</strong>${wasteActive&&waste?`<small>${esc(`${cleanNumber(calculated)} ${unit} con merma`)}</small>`:''}</div>
             <button type="button" class="project-edit-btn ci-edit" data-edit-item="${esc(item.id)}">Editar</button>
             <div class="project-edit-panel ci-edit-panel">
               <div class="project-edit-grid ci-form">
@@ -387,7 +402,7 @@ function renderProjectPage(){
   mount.querySelectorAll('[data-cancel-edit]').forEach(btn=>btn.addEventListener('click',()=>btn.closest('.project-product-row')?.classList.remove('is-editing')));
   mount.querySelectorAll('[data-save-edit]').forEach(btn=>btn.addEventListener('click',()=>saveEditedItem(btn.closest('.project-product-row'))));
   mount.querySelectorAll('[data-edit-field="merma_mode"]').forEach(sel=>sel.addEventListener('change',()=>{
-    const panel=sel.closest('.project-edit-panel');
+    const panel=sel.closest('.ci-edit-panel');
     const editor=panel?.querySelector('.project-merma-editor');
     if(editor) editor.style.display=sel.value==='percent'?'block':'none';
   }));
