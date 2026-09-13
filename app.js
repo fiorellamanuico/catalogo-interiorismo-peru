@@ -308,8 +308,9 @@ function renderProjectPage(){
       .ci-project-v2 .ci-product p{margin:0!important;font-size:9px!important;line-height:1.2!important;color:#888!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
       .ci-project-v2 .ci-value{min-width:0!important;font-size:11px!important;line-height:1.35!important;color:var(--ink)!important;background:transparent!important;padding:0!important;border:0!important;overflow:visible!important;white-space:nowrap!important}
       .ci-project-v2 .ci-value strong{display:block!important;margin:0!important;padding:0!important;background:transparent!important;border:0!important;font-size:11px!important;line-height:1.35!important;font-weight:500!important;color:var(--ink)!important;white-space:nowrap!important}
-      .ci-project-v2 .ci-value small{display:block!important;margin:4px 0 0!important;padding:0!important;background:transparent!important;border:0!important;font-size:8px!important;line-height:1.25!important;color:#999!important;white-space:nowrap!important}
-      .ci-project-v2 .ci-buy strong{font-size:14px!important;font-weight:600!important}
+      .ci-project-v2 .ci-value small{display:block!important;margin:5px 0 0!important;padding:0!important;background:transparent!important;border:0!important;font-size:8px!important;line-height:1.25!important;color:#999!important;white-space:nowrap!important}
+      .ci-project-v2 .ci-buy strong{font-size:11px!important;line-height:1.35!important;font-weight:500!important}
+      .ci-project-v2 .ci-buy small{margin-top:4px!important}
       .ci-project-v2 .ci-edit{justify-self:end!important;width:34px!important;height:34px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;border:1px solid var(--line)!important;background:transparent!important;color:var(--ink)!important;font:inherit!important;font-size:16px!important;line-height:1!important;padding:0!important;cursor:pointer!important;white-space:nowrap!important}
       .ci-project-v2 .ci-edit:hover{background:#fafafa!important}
       .ci-project-v2 .ci-edit svg{width:15px!important;height:15px!important;display:block!important}
