@@ -494,29 +494,49 @@ function openProjectAddModal(projectId){
         <div class="ci-add-field"><label>MERMA</label><select id="ciAddWasteMode"><option value="none">No aplicar</option><option value="percent">Aplicar %</option></select></div>
         <div class="ci-add-field ci-add-waste-value" id="ciAddWasteWrap" style="display:none"><label>PORCENTAJE DE MERMA</label><input id="ciAddWaste" type="number" min="0" step="0.1" value="10"></div>
       </div>
-      <div class="ci-add-actions"><button type="button" class="ci-add-cancel" data-add-close>Cancelar</button><button type="button" class="ci-add-save" id="ciAddSave">Agregar producto</button></div>`;
+      <form class="ci-add-actions" id="ciAddForm"><button type="button" class="ci-add-cancel" data-add-close>Cancelar</button><button type="submit" class="ci-add-save" id="ciAddSave">Agregar producto</button></form>`;
     syncQuantityInput($('ciAddQty'),$('ciAddUnit').value,false);
     $('ciAddUnit').onchange=()=>syncQuantityInput($('ciAddQty'),$('ciAddUnit').value,true);
     $('ciAddWasteMode').onchange=()=>{$('ciAddWasteWrap').style.display=$('ciAddWasteMode').value==='percent'?'block':'none'};
-    $('ciAddSave').onclick=async()=>{
+    $('ciAddForm').addEventListener('submit',async(e)=>{
+      e.preventDefault();
+      e.stopPropagation();
       const saveBtn=$('ciAddSave');
-      const productDbId=productDbIds.get(selected.slug);
-      if(!productDbId){toast('No encontramos este producto en Supabase.');return;}
-      if(existingIds.has(productDbId)){toast('Este producto ya está en el proyecto.');return;}
-      const room=($('ciAddRoom').value||'').trim()||null;
-      const quantity=Math.max(0,Number($('ciAddQty').value)||0);
-      const unit=$('ciAddUnit').value||'und.';
-      const purchaseUnit=($('ciAddPurchaseUnit').value||'').trim()||unit;
-      const purchaseFactor=Math.max(.001,Number($('ciAddFactor').value)||1);
-      const waste=$('ciAddWasteMode').value==='percent'?Math.max(0,Number($('ciAddWaste').value)||0):null;
-      const calculated=Number((quantity*(waste===null?1:1+waste/100)).toFixed(3));
-      const purchaseQuantity=Math.ceil(calculated/purchaseFactor);
-      saveBtn.disabled=true; saveBtn.textContent='Agregando…';
-      const {data:item,error}=await supabaseClient.from('project_items').insert({project_id:project.id,product_id:productDbId,room,quantity,unit,waste_percent:waste,calculated_quantity:calculated,purchase_unit:purchaseUnit,purchase_factor:purchaseFactor,purchase_quantity:purchaseQuantity,added_by:authUser.id}).select('id,project_id,product_id,room,quantity,unit,waste_percent,calculated_quantity,purchase_unit,purchase_factor,purchase_quantity,price,currency,supplier_name,quote_status,notes,added_by,created_at,updated_at').single();
-      if(error){console.error('project_items insert error:', error);saveBtn.disabled=false;saveBtn.textContent='Agregar producto';const detail=[error.message,error.code,error.details,error.hint].filter(Boolean).join(' · ');toast('Error al añadir: '+detail);return;}
-      if(!projectDbItems.has(project.id)) projectDbItems.set(project.id,[]);
-      projectDbItems.get(project.id).push(item); project.items.push(selected.id); save(); updateCounts(); modal.remove(); renderProjects(); renderProjectPage(); toast(`“${selected.name}” añadido a “${project.name}”`);
-    };
+      try{
+        if(!selected){toast('Primero selecciona un producto.');return;}
+        if(!supabaseClient || !authUser){toast('La sesión todavía no está lista.');return;}
+        const productDbId=productDbIds.get(selected.slug);
+        if(!productDbId){toast('No encontramos este producto en Supabase.');return;}
+        if(existingIds.has(productDbId)){toast('Este producto ya está en el proyecto.');return;}
+        const room=($('ciAddRoom').value||'').trim()||null;
+        const quantity=Math.max(0,Number($('ciAddQty').value)||0);
+        const unit=$('ciAddUnit').value||'und.';
+        const purchaseUnit=($('ciAddPurchaseUnit').value||'').trim()||unit;
+        const purchaseFactor=Math.max(.001,Number($('ciAddFactor').value)||1);
+        const waste=$('ciAddWasteMode').value==='percent'?Math.max(0,Number($('ciAddWaste').value)||0):null;
+        const calculated=Number((quantity*(waste===null?1:1+waste/100)).toFixed(3));
+        const purchaseQuantity=Math.ceil(calculated/purchaseFactor);
+        saveBtn.disabled=true; saveBtn.textContent='Agregando…';
+        const payload={project_id:project.id,product_id:productDbId,room,quantity,unit,waste_percent:waste,calculated_quantity:calculated,purchase_unit:purchaseUnit,purchase_factor:purchaseFactor,purchase_quantity:purchaseQuantity,added_by:authUser.id};
+        const {data:item,error}=await supabaseClient.from('project_items').insert(payload).select('id,project_id,product_id,room,quantity,unit,waste_percent,calculated_quantity,purchase_unit,purchase_factor,purchase_quantity,price,currency,supplier_name,quote_status,notes,added_by,created_at,updated_at').single();
+        if(error){
+          console.error('project_items insert error:',error,payload);
+          saveBtn.disabled=false; saveBtn.textContent='Agregar producto';
+          const detail=[error.message,error.code,error.details,error.hint].filter(Boolean).join(' · ');
+          toast('Error al añadir: '+(detail||'No se pudo guardar el producto.'));
+          return;
+        }
+        if(!projectDbItems.has(project.id)) projectDbItems.set(project.id,[]);
+        projectDbItems.get(project.id).push(item);
+        project.items.push(selected.id);
+        save(); updateCounts(); modal.remove(); renderProjects(); renderProjectPage();
+        toast(`“${selected.name}” añadido a “${project.name}”`);
+      }catch(err){
+        console.error('add project item unexpected error:',err);
+        saveBtn.disabled=false; saveBtn.textContent='Agregar producto';
+        toast('Ocurrió un error al agregar. Revisa la consola.');
+      }
+    });
   };
   modal.querySelectorAll('[data-add-close]').forEach(el=>el.addEventListener('click',()=>modal.remove()));
   $('ciAddSearch').addEventListener('input',renderList);
