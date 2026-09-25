@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Nuevo producto · Catálogo</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <style>
+    :root{--ink:#151515;--muted:#777;--line:#e7e4df;--paper:#f8f7f4;--white:#fff}
+    *{box-sizing:border-box} body{margin:0;background:var(--paper);color:var(--ink);font-family:Arial,Helvetica,sans-serif}
+    header{height:76px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 5vw}
+    .brand{font-size:18px;font-weight:600}.brand small{display:block;font-size:10px;font-weight:400;color:#888;margin-top:3px}
+    .nav{display:flex;gap:26px;align-items:center;font-size:13px}.nav a{color:inherit;text-decoration:none}.logout{border:1px solid var(--line);background:#fff;padding:9px 13px;cursor:pointer}
+    main{max-width:1120px;margin:0 auto;padding:52px 28px 90px}.back{color:#777;text-decoration:none;font-size:13px}.eyebrow{font-size:10px;letter-spacing:3px;color:#777;margin-top:44px}.title{font-size:52px;line-height:1.02;margin:10px 0 12px;letter-spacing:-2px}.intro{color:#777;max-width:700px;font-size:14px;line-height:1.6}
+    .form{margin-top:42px;background:#fff;border:1px solid var(--line)}.section{padding:30px;border-bottom:1px solid var(--line)}.section:last-child{border-bottom:0}.section h2{font-size:20px;margin:0 0 5px}.section p{font-size:12px;color:#888;margin:0 0 22px}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 22px}.full{grid-column:1/-1}.field label{display:block;font-size:10px;letter-spacing:1.5px;color:#777;margin-bottom:8px;text-transform:uppercase}.field input,.field select,.field textarea{width:100%;border:1px solid #dcd9d3;background:#fff;padding:12px 13px;font:inherit;font-size:14px;outline:none}.field textarea{min-height:110px;resize:vertical}.field input:focus,.field select:focus,.field textarea:focus{border-color:#222}.hint{font-size:11px;color:#999;margin-top:6px}
+    .actions{display:flex;justify-content:flex-end;gap:10px;padding:24px 30px;background:#fff}.btn{border:1px solid #222;padding:12px 18px;background:#fff;cursor:pointer;font-size:13px}.btn.primary{background:#151515;color:#fff}.btn:disabled{opacity:.5;cursor:not-allowed}
+    .status{margin:0 30px 24px;padding:12px 14px;font-size:13px;display:none}.status.show{display:block}.status.ok{background:#edf7ef}.status.error{background:#fff0ee;color:#9a2116}.required{color:#a12a20}
+    .tech{display:none;margin-top:18px;padding-top:20px;border-top:1px solid var(--line)}.tech.show{display:block}.tech h3{font-size:14px;margin:0 0 15px}.chipnote{font-size:11px;color:#888;margin-top:8px}
+    @media(max-width:760px){header{padding:0 20px}.nav a:not(.keep){display:none}main{padding:34px 16px 70px}.title{font-size:40px}.grid{grid-template-columns:1fr}.full{grid-column:auto}.section{padding:22px}.actions{padding:20px 22px}.actions .btn{flex:1}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="brand">Catálogo<small>Interiorismo Perú</small></div>
+  <nav class="nav">
+    <a href="index.html">Catálogo</a><a href="proyectos.html">Proyectos</a><button class="logout" id="logout">Salir</button>
+  </nav>
+</header>
+<main>
+  <a class="back" href="index.html">← Volver al catálogo</a>
+  <div class="eyebrow">PRODUCTO</div>
+  <h1 class="title">Nuevo producto</h1>
+  <p class="intro">Crea una ficha base lista para especificar. Los campos técnicos cambian según la categoría.</p>
+
+  <form class="form" id="productForm">
+    <section class="section">
+      <h2>Información principal</h2><p>Datos que identifican el producto en el catálogo.</p>
+      <div class="grid">
+        <div class="field"><label>Nombre <span class="required">*</span></label><input id="name" required placeholder="Ej. Porcelanato Calacatta" /></div>
+        <div class="field"><label>Marca <span class="required">*</span></label><select id="brand_id" required><option value="">Seleccionar marca</option></select></div>
+        <div class="field"><label>Categoría <span class="required">*</span></label><select id="category_id" required><option value="">Seleccionar categoría</option></select></div>
+        <div class="field"><label>Subcategoría</label><input id="subcategory" placeholder="Ej. Porcelanato / Mesa de centro" /></div>
+        <div class="field"><label>SKU</label><input id="sku" placeholder="Código del fabricante" /></div>
+        <div class="field"><label>Colección</label><input id="collection" placeholder="Nombre de colección" /></div>
+        <div class="field full"><label>Descripción</label><textarea id="description" placeholder="Descripción breve y útil para especificación"></textarea></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Materialidad y diseño</h2><p>Información común a distintas categorías.</p>
+      <div class="grid">
+        <div class="field"><label>Material</label><input id="material" placeholder="Ej. Porcelanato esmaltado" /></div>
+        <div class="field"><label>Construcción</label><input id="construction" placeholder="Ej. Cuerpo porcelánico" /></div>
+        <div class="field"><label>Acabado</label><input id="finish" placeholder="Ej. Mate" /></div>
+        <div class="field"><label>Textura / superficie</label><input id="surface_texture" placeholder="Ej. Lisa" /></div>
+        <div class="field"><label>Color</label><input id="color" placeholder="Ej. Blanco cálido" /></div>
+        <div class="field"><label>Dimensiones</label><input id="dimensions" placeholder="Ej. 60 × 120 × 0.9 cm" /></div>
+        <div class="field"><label>Estilo</label><input id="style" placeholder="Ej. Contemporáneo" /></div>
+        <div class="field"><label>Interior / exterior</label><select id="indoor_outdoor"><option value="both">Interior y exterior</option><option value="indoor">Interior</option><option value="outdoor">Exterior</option></select></div>
+        <div class="field full"><label>Aplicaciones</label><input id="applications" placeholder="Ej. Piso, muro, baño, cocina (separadas por coma)" /></div>
+        <div class="field full"><label>Variantes</label><input id="variants" placeholder="Ej. 60×120, 80×160, acabado mate (separadas por coma)" /><div class="chipnote">Se guardarán como una lista para poder reutilizarlas después.</div></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Fabricación y procedencia</h2><p>Información útil para especificación y trazabilidad.</p>
+      <div class="grid">
+        <div class="field"><label>Diseñador</label><input id="designer" /></div>
+        <div class="field"><label>Fabricante</label><input id="manufacturer" /></div>
+        <div class="field"><label>Año</label><input id="year" type="number" min="0" max="2100" /></div>
+        <div class="field"><label>País de origen</label><input id="country_of_origin" /></div>
+        <div class="field full"><label>Mantenimiento</label><textarea id="maintenance" placeholder="Limpieza, cuidados, recomendaciones..."></textarea></div>
+        <div class="field full"><label>Certificaciones</label><input id="certifications" placeholder="Ej. ISO 9001, CE, Greenguard (separadas por coma)" /></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Compra y disponibilidad</h2><p>Datos comerciales. El precio puede actualizarse sin cambiar la ficha técnica.</p>
+      <div class="grid">
+        <div class="field"><label>Precio</label><input id="price" type="number" min="0" step="0.01" placeholder="0.00" /></div>
+        <div class="field"><label>Moneda</label><select id="currency"><option value="PEN">PEN — Soles</option><option value="USD">USD — Dólares</option><option value="EUR">EUR — Euros</option></select></div>
+        <div class="field"><label>Disponibilidad</label><input id="availability" placeholder="Ej. En stock / Bajo pedido" /></div>
+        <div class="field"><label>Tiempo de entrega</label><input id="lead_time" placeholder="Ej. 2–4 semanas" /></div>
+        <div class="field"><label>Pedido mínimo</label><input id="minimum_order" placeholder="Ej. 1 caja" /></div>
+        <div class="field"><label>Garantía</label><input id="warranty" placeholder="Ej. 2 años" /></div>
+        <div class="field full"><label>Fuente original</label><input id="source_url" type="url" placeholder="https://..." /></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Especificaciones técnicas</h2><p>Campos específicos según la categoría seleccionada.</p>
+      <div id="techFields" class="tech"></div>
+    </section>
+
+    <div class="status" id="status"></div>
+    <div class="actions">
+      <button type="button" class="btn" id="cancel">Cancelar</button>
+      <button type="submit" class="btn primary" id="save">Guardar producto</button>
+    </div>
+  </form>
+</main>
+
+<script>
+(function(){
+  const { createClient } = window.supabase;
+  const cfg = window.SUPABASE_CONFIG || {};
+  const sb = createClient(cfg.url, cfg.publishableKey);
+  const $ = id => document.getElementById(id);
+  let currentUser = null;
+  let categories = [];
+  let brands = [];
+
+  const techBySlug = {
+    acabados: [
+      ['format','Formato','Ej. 60 × 120 cm'],['thickness','Espesor','Ej. 9 mm'],['rectified','Rectificado','Sí / No'],['shade_variation','Variación de tono','Ej. V3'],['slip_rating','Antideslizamiento','Ej. R10'],['pieces_per_box','Piezas por caja','Ej. 2'],['coverage_per_box','Cobertura por caja','Ej. 1.44 m²'],['grout','Junta recomendada','Ej. 2 mm']
+    ],
+    iluminacion: [
+      ['power','Potencia','Ej. 12 W'],['lumens','Lúmenes','Ej. 900 lm'],['color_temperature','Temperatura de color','Ej. 3000 K'],['cri','CRI','Ej. >90'],['ip','IP','Ej. IP44'],['dimmable','Regulable','Sí / No']
+    ],
+    textiles: [
+      ['composition','Composición','Ej. 70% lana / 30% nylon'],['width','Ancho','Ej. 140 cm'],['martindale','Martindale','Ej. 50,000 ciclos'],['fire_rating','Resistencia al fuego','Ej. CAL 117'],['cleaning','Limpieza','Ej. Lavado en seco']
+    ],
+    mobiliario: [
+      ['height','Alto','Ej. 80 cm'],['width','Ancho','Ej. 220 cm'],['depth','Profundidad','Ej. 95 cm'],['seat_height','Altura de asiento','Ej. 45 cm'],['load_capacity','Carga máxima','Ej. 120 kg'],['upholstery','Tapizado','Ej. Tela / cuero'],['structure','Estructura','Ej. Acero pintado']
+    ],
+    bano: [
+      ['installation','Instalación','Ej. Empotrado / sobre tablero'],['water_consumption','Consumo de agua','Ej. 6 L'],['pressure_flow','Presión / caudal','Ej. 3 bar / 8 L/min'],['certifications_bath','Certificaciones','Ej. CE / NSF']
+    ],
+    exterior: [
+      ['weather_resistance','Resistencia climática','Ej. UV / humedad'],['slip_rating_ext','Antideslizamiento','Ej. R11'],['maintenance_ext','Mantenimiento','Ej. Bajo']
+    ],
+    maderas: [
+      ['species','Especie','Ej. Roble'],['origin_wood','Origen','Ej. Europa'],['thickness_wood','Espesor','Ej. 20 mm'],['hardness','Dureza','Ej. 4.0 kN'],['finish_wood','Acabado','Ej. Aceite']
+    ],
+    piedras: [
+      ['stone_type','Tipo de piedra','Ej. Mármol'],['slab_size','Formato de placa','Ej. 300 × 160 cm'],['thickness_stone','Espesor','Ej. 20 mm'],['variation_stone','Variación','Ej. Alta'],['porosity','Porosidad','Ej. Baja']
+    ]
+  };
+
+  function slugify(v){return v.toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');}
+  function showStatus(msg, ok=false){const el=$('status');el.textContent=msg;el.className='status show '+(ok?'ok':'error');}
+  function clearStatus(){const el=$('status');el.className='status';el.textContent='';}
+  function renderTech(){
+    const cat = categories.find(c=>c.id === $('category_id').value);
+    const box=$('techFields'); box.innerHTML='';
+    if(!cat){box.className='tech';return;}
+    const fields=techBySlug[cat.slug] || [];
+    if(!fields.length){box.className='tech';return;}
+    box.className='tech show';
+    const grid=document.createElement('div');grid.className='grid';
+    fields.forEach(([key,label,ph])=>{
+      const wrap=document.createElement('div');wrap.className='field';
+      const lab=document.createElement('label');lab.textContent=label;wrap.appendChild(lab);
+      const input=document.createElement('input');input.id='tech_'+key;input.dataset.tech=key;input.placeholder=ph||'';wrap.appendChild(input);grid.appendChild(wrap);
+    });
+    box.appendChild(grid);
+  }
+  async function init(){
+    const {data:{session}}=await sb.auth.getSession();
+    if(!session){location.href='login.html';return;}
+    currentUser=session.user;
+    const [cRes,bRes]=await Promise.all([
+      sb.from('categories').select('id,name,slug').order('name'),
+      sb.from('brands').select('id,name,slug').eq('status','active').order('name')
+    ]);
+    if(cRes.error){showStatus('No pudimos cargar las categorías: '+cRes.error.message);return;}
+    if(bRes.error){showStatus('No pudimos cargar las marcas: '+bRes.error.message);return;}
+    categories=cRes.data||[];brands=bRes.data||[];
+    categories.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;$('category_id').appendChild(o)});
+    brands.forEach(b=>{const o=document.createElement('option');o.value=b.id;o.textContent=b.name;$('brand_id').appendChild(o)});
+    $('category_id').addEventListener('change',renderTech);
+  }
+  $('productForm').addEventListener('submit', async e=>{
+    e.preventDefault();clearStatus();$('save').disabled=true;$('save').textContent='Guardando…';
+    try{
+      const name=$('name').value.trim();
+      if(!name) throw new Error('El nombre del producto es obligatorio.');
+      const category=categories.find(c=>c.id===$('category_id').value);
+      const tech={};document.querySelectorAll('[data-tech]').forEach(i=>{if(i.value.trim())tech[i.dataset.tech]=i.value.trim();});
+      const apps=$('applications').value.split(',').map(v=>v.trim()).filter(Boolean);
+      const certs=$('certifications').value.split(',').map(v=>v.trim()).filter(Boolean);
+      const variants=$('variants').value.split(',').map(v=>v.trim()).filter(Boolean);
+      const price=$('price').value===''?null:Number($('price').value);
+      const year=$('year').value===''?null:Number($('year').value);
+      const slugBase=slugify(name);
+      const {data:existing}=await sb.from('products').select('slug').like('slug',slugBase+'%');
+      const used=new Set((existing||[]).map(x=>x.slug));let slug=slugBase||('producto-'+Date.now());let n=2;while(used.has(slug)){slug=slugBase+'-'+n++;}
+      const payload={
+        name,slug,brand_id:$('brand_id').value||null,category_id:$('category_id').value||null,subcategory:$('subcategory').value.trim()||null,sku:$('sku').value.trim()||null,collection:$('collection').value.trim()||null,description:$('description').value.trim()||null,designer:$('designer').value.trim()||null,manufacturer:$('manufacturer').value.trim()||null,year,material:$('material').value.trim()||null,finish:$('finish').value.trim()||null,surface_texture:$('surface_texture').value.trim()||null,style:$('style').value.trim()||null,applications:apps,indoor_outdoor:$('indoor_outdoor').value,dimensions:$('dimensions').value.trim()||null,availability:$('availability').value.trim()||null,lead_time:$('lead_time').value.trim()||null,minimum_order:$('minimum_order').value.trim()||null,warranty:$('warranty').value.trim()||null,country_of_origin:$('country_of_origin').value.trim()||null,maintenance:$('maintenance').value.trim()||null,main_image_url:null,status:'draft',created_by:currentUser.id,
+        color:$('color').value.trim()||null,variants,price,currency:$('currency').value,price_updated_at:price!==null?new Date().toISOString():null,certifications:certs,source_url:$('source_url').value.trim()||null,last_verified_at:new Date().toISOString(),technical_specs:tech
+      };
+      const {data,error}=await sb.from('products').insert(payload).select('id,slug').single();
+      if(error)throw error;
+      showStatus('Producto creado correctamente.',true);$('save').textContent='Guardado ✓';
+      setTimeout(()=>{location.href='producto.html?slug='+encodeURIComponent(data.slug)},700);
+    }catch(err){console.error(err);showStatus('No se pudo guardar el producto: '+(err.message||err));$('save').disabled=false;$('save').textContent='Guardar producto';}
+  });
+  $('cancel').addEventListener('click',()=>{location.href='index.html'});
+  $('logout').addEventListener('click',async()=>{await sb.auth.signOut();location.href='login.html';});
+  init();
+})();
+</script>
+</body>
+</html>
