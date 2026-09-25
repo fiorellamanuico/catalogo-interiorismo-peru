@@ -71,6 +71,28 @@ async function initSupabaseCatalog(){
 
   const brandMap=new Map((dbBrands||[]).map(x=>[x.id,x.name]));
   const categoryMap=new Map((dbCategories||[]).map(x=>[x.id,x.name]));
+  const productIds=(dbProducts||[]).map(x=>x.id);
+  let dbImageFiles=[];
+  if(productIds.length){
+    const {data:imageRows,error:imageError}=await supabaseClient
+      .from('product_files')
+      .select('id,product_id,file_type,file_name,file_url,is_primary,sort_order,created_at')
+      .in('product_id',productIds)
+      .eq('file_type','image')
+      .order('sort_order',{ascending:true})
+      .order('created_at',{ascending:true});
+    if(imageError){
+      console.error(imageError);
+      toast('Los productos cargaron, pero no se pudieron cargar sus imágenes.');
+    }else{
+      dbImageFiles=imageRows||[];
+    }
+  }
+  const imagesByProduct=new Map();
+  dbImageFiles.forEach(file=>{
+    if(!imagesByProduct.has(file.product_id)) imagesByProduct.set(file.product_id,[]);
+    imagesByProduct.get(file.product_id).push(file.file_url);
+  });
   const bySlug=new Map(products.map(p=>[p.slug,p]));
   let nextLocalId=products.reduce((max,p)=>Math.max(max,Number(p.id)||0),0)+1;
 
@@ -98,7 +120,9 @@ async function initSupabaseCatalog(){
       category:categoryMap.get(row.category_id)||'Sin categoría',
       subcategory:row.subcategory||'—',
       description:row.description||'—',
-      images:row.main_image_url?[row.main_image_url]:(existing?.images||['Foto principal']),
+      images:imagesByProduct.get(row.id)?.length
+        ? imagesByProduct.get(row.id)
+        : (row.main_image_url?[row.main_image_url]:(existing?.images||['Foto principal'])),
       variants:variants.length?variants:(existing?.variants||[]),
       materials,
       construction:existing?.construction||'—',
@@ -771,18 +795,83 @@ function renderFavoritesPage(){
   bindProductCards(); updateCounts();
 }
 
+function imageBackgroundStyle(url,tone1,tone2){
+  const value=String(url||'');
+  if(/^https?:\/\//i.test(value)){
+    return `background-image:url("${escAttrValue(value)}");background-size:cover;background-position:center;background-repeat:no-repeat;`;
+  }
+  return `background:linear-gradient(145deg,${escAttrValue(tone1)},${escAttrValue(tone2)});`;
+}
+function isRealImageUrl(url){ return /^https?:\/\//i.test(String(url||'')); }
+
 function renderProductPage(){
   const mount=$('productPage'); if(!mount) return;
   const slug=new URLSearchParams(location.search).get('slug');
   const p=products.find(x=>x.slug===slug);
-  if(!p){mount.innerHTML=`<div class="product-not-found"><a class="back-link" href="index.html">← Volver al catálogo</a><p class="eyebrow">PRODUCTO</p><h1>Producto no encontrado</h1><p>El producto que buscas no existe o fue movido.</p><a class="primary-link" href="index.html#catalogo">Explorar catálogo</a></div>`;return;}
+  if(!p){
+    mount.innerHTML=`<div class="product-not-found"><a class="back-link" href="index.html">← Volver al catálogo</a><p class="eyebrow">PRODUCTO</p><h1>Producto no encontrado</h1><p>El producto que buscas no existe o fue movido.</p><a class="primary-link" href="index.html#catalogo">Explorar catálogo</a></div>`;
+    return;
+  }
   document.title=`${p.name} · ${p.brand} | Catálogo Interiorismo Perú`;
-  const images=p.images||['Foto principal'];
+  const images=(p.images||[]).filter(Boolean);
+  const usableImages=images.length?images:['Foto principal'];
   const files=allFiles(p);
-  const detailRows=[detail('SKU',p.sku),detail('Colección',p.collection),detail('Diseñador',p.designer),detail('Fabricante',p.manufacturer),detail('Año',p.year),detail('Materialidad',p.materials.join(', ')),detail('Construcción',p.construction),detail('Acabado',p.finish.join(', ')),detail('Textura',p.surfaceTexture),detail('Color',p.colors.join(', ')),detail('Variantes',p.variants.join(', ')),detail('Dimensiones',Object.values(p.dimensions||{}).filter(Boolean).join(' × ')||'—'),detail('Estilo',p.style.join(', ')),detail('Uso',p.applications.join(', ')),detail('Interior / exterior',p.indoorOutdoor),detail('Disponibilidad',p.availability),detail('Tiempo de entrega',p.leadTime),detail('Pedido mínimo',p.minimumOrder),detail('Garantía',p.warranty),detail('Origen',p.countryOfOrigin),detail('Precio actualizado',p.priceLastUpdated),detail('Mantenimiento',p.maintenance),technicalDetails(p)];
-  mount.innerHTML=`<div class="product-page-wrap"><a class="back-link" href="index.html">← Volver al catálogo</a><div class="product-page-grid"><div><div class="page-gallery-main" id="pageGallery" style="--tone1:${p.tone1};--tone2:${p.tone2}"><span id="pageGalleryLabel" aria-hidden="true"></span><button id="pagePrev">‹</button><button id="pageNext">›</button><span id="pageCounter">1 / ${images.length}</span></div><div class="page-gallery-thumbs">${images.map((im,i)=>`<button aria-label="Imagen ${i+1}" class="page-thumb ${i===0?'active':''}" data-page-gallery="${i}" style="--tone1:${p.tone1};--tone2:${p.tone2}"></button>`).join('')}</div></div><div class="product-page-info"><p class="eyebrow">${esc(p.category)} · ${esc(p.subcategory)}</p><h1>${esc(p.name)}</h1><p class="page-brand">${esc(p.brand)} · ${esc(p.collection)}</p><div class="page-price">${p.price==null?'Consultar precio':esc(p.currency==='PEN'?`S/ ${p.price}`:p.price)}</div><p class="page-description">${esc(p.description)}</p><div class="page-actions"><button class="primary" id="pageAdd">＋ Añadir a proyecto</button><button id="pageFav">♡ Guardar</button></div><div class="page-section"><h2>Información del producto</h2><div class="detail-grid">${detailRows.join('')}</div></div><div class="page-section"><h2>Archivos para diseño</h2><div class="resource-list">${files.length?files.map(f=>`<span class="resource">${esc(f)}</span>`).join(''):'<span class="empty">Todavía no hay archivos cargados.</span>'}</div></div></div></div></div>`;
-  let gi=0; const show=i=>{gi=(i+images.length)%images.length;$('pageGalleryLabel').textContent=images[gi];$('pageCounter').textContent=`${gi+1} / ${images.length}`;document.querySelectorAll('[data-page-gallery]').forEach((b,j)=>b.classList.toggle('active',j===gi))};
-  $('pagePrev').onclick=()=>show(gi-1); $('pageNext').onclick=()=>show(gi+1); document.querySelectorAll('[data-page-gallery]').forEach(b=>b.onclick=()=>show(+b.dataset.pageGallery));
-  $('pageAdd').onclick=()=>openProjectPicker(p.id); $('pageFav').onclick=()=>{toggleFavorite(p.id);$('pageFav').textContent=state.favorites.has(p.id)?'♥ Guardado':'♡ Guardar';}; $('pageFav').textContent=state.favorites.has(p.id)?'♥ Guardado':'♡ Guardar';
+  const detailRows=[
+    detail('SKU',p.sku),detail('Colección',p.collection),detail('Diseñador',p.designer),
+    detail('Fabricante',p.manufacturer),detail('Año',p.year),detail('Materialidad',p.materials.join(', ')),
+    detail('Construcción',p.construction),detail('Acabado',p.finish.join(', ')),detail('Textura',p.surfaceTexture),
+    detail('Color',p.colors.join(', ')),detail('Variantes',p.variants.join(', ')),
+    detail('Dimensiones',Object.values(p.dimensions||{}).filter(Boolean).join(' × ')||'—'),
+    detail('Estilo',p.style.join(', ')),detail('Uso',p.applications.join(', ')),detail('Interior / exterior',p.indoorOutdoor),
+    detail('Disponibilidad',p.availability),detail('Tiempo de entrega',p.leadTime),detail('Pedido mínimo',p.minimumOrder),
+    detail('Garantía',p.warranty),detail('Origen',p.countryOfOrigin),detail('Precio actualizado',p.priceLastUpdated),
+    detail('Mantenimiento',p.maintenance),technicalDetails(p)
+  ];
+  const mainStyle=imageBackgroundStyle(usableImages[0],p.tone1,p.tone2);
+  mount.innerHTML=`<div class="product-page-wrap">
+    <a class="back-link" href="index.html">← Volver al catálogo</a>
+    <div class="product-page-grid">
+      <div>
+        <div class="page-gallery-main" id="pageGallery" style="${mainStyle}">
+          <span id="pageGalleryLabel" aria-hidden="true"></span>
+          <button id="pagePrev" aria-label="Imagen anterior">‹</button>
+          <button id="pageNext" aria-label="Imagen siguiente">›</button>
+          <span id="pageCounter">1 / ${usableImages.length}</span>
+        </div>
+        <div class="page-gallery-thumbs">
+          ${usableImages.map((im,i)=>`<button aria-label="Imagen ${i+1}" class="page-thumb ${i===0?'active':''}" data-page-gallery="${i}" style="${imageBackgroundStyle(im,p.tone1,p.tone2)}"></button>`).join('')}
+        </div>
+      </div>
+      <div class="product-page-info">
+        <p class="eyebrow">${esc(p.category)} · ${esc(p.subcategory)}</p>
+        <h1>${esc(p.name)}</h1>
+        <p class="page-brand">${esc(p.brand)} · ${esc(p.collection)}</p>
+        <div class="page-price">${p.price==null?'Consultar precio':esc(p.currency==='PEN'?`S/ ${p.price}`:p.price)}</div>
+        <p class="page-description">${esc(p.description)}</p>
+        <div class="page-actions"><button class="primary" id="pageAdd">＋ Añadir a proyecto</button><button id="pageFav">♡ Guardar</button></div>
+        <div class="page-section"><h2>Información del producto</h2><div class="detail-grid">${detailRows.join('')}</div></div>
+        <div class="page-section"><h2>Archivos para diseño</h2><div class="resource-list">${files.length?files.map(f=>`<span class="resource">${esc(f)}</span>`).join(''):'<span class="empty">Todavía no hay archivos cargados.</span>'}</div></div>
+        ${isRealImageUrl(usableImages[0])?'<div class="image-source-note">Imágenes guardadas en la biblioteca del producto.</div>':''}
+      </div>
+    </div>
+  </div>`;
+  let gi=0;
+  const show=i=>{
+    gi=(i+usableImages.length)%usableImages.length;
+    const url=usableImages[gi];
+    $('pageGallery').style.cssText=imageBackgroundStyle(url,p.tone1,p.tone2);
+    $('pageGalleryLabel').textContent=isRealImageUrl(url)?'':'';
+    $('pageCounter').textContent=`${gi+1} / ${usableImages.length}`;
+    document.querySelectorAll('[data-page-gallery]').forEach((b,j)=>b.classList.toggle('active',j===gi));
+  };
+  $('pagePrev').onclick=()=>show(gi-1);
+  $('pageNext').onclick=()=>show(gi+1);
+  document.querySelectorAll('[data-page-gallery]').forEach(b=>b.onclick=()=>show(+b.dataset.pageGallery));
+  $('pageAdd').onclick=()=>openProjectPicker(p.id);
+  $('pageFav').onclick=()=>{
+    toggleFavorite(p.id);
+    $('pageFav').textContent=state.favorites.has(p.id)?'♥ Guardado':'♡ Guardar';
+  };
+  $('pageFav').textContent=state.favorites.has(p.id)?'♥ Guardado':'♡ Guardar';
 }
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>{ if(supabaseClient){ renderProductPage(); renderProjectPage(); } }); else if(supabaseClient){ renderProductPage(); renderProjectPage(); }

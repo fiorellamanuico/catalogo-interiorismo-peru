@@ -18,6 +18,7 @@
     .actions{display:flex;justify-content:flex-end;gap:10px;padding:24px 30px;background:#fff}.btn{border:1px solid #222;padding:12px 18px;background:#fff;cursor:pointer;font-size:13px}.btn.primary{background:#151515;color:#fff}.btn:disabled{opacity:.5;cursor:not-allowed}
     .status{margin:0 30px 24px;padding:12px 14px;font-size:13px;display:none}.status.show{display:block}.status.ok{background:#edf7ef}.status.error{background:#fff0ee;color:#9a2116}.required{color:#a12a20}
     .tech{display:none;margin-top:18px;padding-top:20px;border-top:1px solid var(--line)}.tech.show{display:block}.tech h3{font-size:14px;margin:0 0 15px}.chipnote{font-size:11px;color:#888;margin-top:8px}
+.image-preview{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:14px}.image-preview figure{margin:0;position:relative;border:1px solid var(--line);background:var(--paper);aspect-ratio:1/1;overflow:hidden}.image-preview img{width:100%;height:100%;object-fit:cover;display:block}.image-preview figcaption{position:absolute;left:6px;bottom:6px;background:rgba(255,255,255,.92);padding:4px 6px;font-size:10px}.uploading-note{font-size:12px;color:#777;margin-top:10px}.image-preview-empty{font-size:12px;color:#999;padding:14px 0}@media(max-width:760px){.image-preview{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:760px){header{padding:0 20px}.nav a:not(.keep){display:none}main{padding:34px 16px 70px}.title{font-size:40px}.grid{grid-template-columns:1fr}.full{grid-column:auto}.section{padding:22px}.actions{padding:20px 22px}.actions .btn{flex:1}}
   </style>
 </head>
@@ -86,6 +87,18 @@
         <div class="field"><label>Pedido mínimo</label><input id="minimum_order" placeholder="Ej. 1 caja" /></div>
         <div class="field"><label>Garantía</label><input id="warranty" placeholder="Ej. 2 años" /></div>
         <div class="field full"><label>Fuente original</label><input id="source_url" type="url" placeholder="https://..." /></div>
+      </div>
+    </section>
+
+
+    <section class="section">
+      <h2>Fotos del producto</h2>
+      <p>Sube hasta 10 imágenes. La primera será la imagen principal de la ficha.</p>
+      <div class="field full">
+        <label>Imágenes</label>
+        <input id="product_images" type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple />
+        <div class="hint">Formatos: JPG, PNG, WebP o AVIF. Recomendado: imágenes de buena resolución y hasta 10 MB por archivo.</div>
+        <div id="imagePreview" class="image-preview"></div>
       </div>
     </section>
 
@@ -171,7 +184,46 @@
     categories.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;$('category_id').appendChild(o)});
     brands.forEach(b=>{const o=document.createElement('option');o.value=b.id;o.textContent=b.name;$('brand_id').appendChild(o)});
     $('category_id').addEventListener('change',renderTech);
+    $('product_images').addEventListener('change',()=>{
+      const files=Array.from($('product_images').files||[]);
+      const box=$('imagePreview');
+      if(!files.length){box.innerHTML='<div class="image-preview-empty">No has seleccionado imágenes.</div>';return;}
+      if(files.length>10){showStatus('Puedes seleccionar máximo 10 imágenes.');$('product_images').value='';box.innerHTML='';return;}
+      box.innerHTML=files.map((file,i)=>`<figure><img src="${URL.createObjectURL(file)}" alt=""><figcaption>${i===0?'Principal':'Imagen '+(i+1)}</figcaption></figure>`).join('');
+    });
   }
+  async function uploadProductImages(productId, files, userId){
+    const uploaded=[];
+    for(let i=0;i<files.length;i++){
+      const file=files[i];
+      if(file.size>10*1024*1024) throw new Error(`La imagen "${file.name}" supera los 10 MB.`);
+      const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
+      const safeBase=file.name.replace(/\.[^/.]+$/,'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9_-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,60)||'imagen';
+      const path=`products/${productId}/${Date.now()}-${i}-${safeBase}.${ext}`;
+      const {error:uploadError}=await sb.storage.from('product-images').upload(path,file,{upsert:false,contentType:file.type,cacheControl:'3600'});
+      if(uploadError) throw uploadError;
+      const {data:publicData}=sb.storage.from('product-images').getPublicUrl(path);
+      const publicUrl=publicData?.publicUrl;
+      if(!publicUrl) throw new Error(`No se pudo obtener la URL pública de "${file.name}".`);
+      uploaded.push({
+        product_id:productId,
+        file_type:'image',
+        file_name:file.name,
+        file_url:publicUrl,
+        is_primary:i===0,
+        sort_order:i,
+        created_by:userId
+      });
+    }
+    if(uploaded.length){
+      const {error:fileError}=await sb.from('product_files').insert(uploaded);
+      if(fileError) throw fileError;
+      const {error:updateError}=await sb.from('products').update({main_image_url:uploaded[0].file_url}).eq('id',productId).eq('created_by',userId);
+      if(updateError) throw updateError;
+    }
+    return uploaded;
+  }
+
   $('productForm').addEventListener('submit', async e=>{
     e.preventDefault();clearStatus();$('save').disabled=true;$('save').textContent='Guardando…';
     try{
@@ -193,9 +245,29 @@
       };
       const {data,error}=await sb.from('products').insert(payload).select('id,slug').single();
       if(error)throw error;
-      showStatus('Producto creado correctamente.',true);$('save').textContent='Guardado ✓';
-      setTimeout(()=>{location.href='producto.html?slug='+encodeURIComponent(data.slug)},700);
-    }catch(err){console.error(err);showStatus('No se pudo guardar el producto: '+(err.message||err));$('save').disabled=false;$('save').textContent='Guardar producto';}
+
+      const selectedFiles=Array.from($('product_images').files||[]);
+      let imageMessage='';
+      if(selectedFiles.length){
+        $('save').textContent='Subiendo fotos…';
+        try{
+          const uploaded=await uploadProductImages(data.id,selectedFiles,currentUser.id);
+          imageMessage=` ${uploaded.length} foto${uploaded.length===1?'':'s'} guardada${uploaded.length===1?'':'s'}.`;
+        }catch(imageError){
+          console.error(imageError);
+          imageMessage=' El producto se creó, pero no se pudieron guardar las fotos. Puedes volver a intentarlo después.';
+        }
+      }
+
+      showStatus(`Producto creado correctamente.${imageMessage}`,true);
+      $('save').textContent='Guardado ✓';
+      setTimeout(()=>{location.href='producto.html?slug='+encodeURIComponent(data.slug)},900);
+    }catch(err){
+      console.error(err);
+      showStatus('No se pudo guardar el producto: '+(err.message||err));
+      $('save').disabled=false;
+      $('save').textContent='Guardar producto';
+    }
   });
   $('cancel').addEventListener('click',()=>{location.href='index.html'});
   $('logout').addEventListener('click',async()=>{await sb.auth.signOut();location.href='login.html';});
