@@ -139,6 +139,17 @@ function refreshCurrentPage(){
   if($('projectPage')) renderProjectPage();
 }
 
+// Fallback global para que el botón de agregar nunca provoque una navegación
+// accidental, incluso si el listener local se pierde durante un re-render.
+document.addEventListener('click',(e)=>{
+  const btn=e.target.closest?.('#projectAddProduct, #projectAddEmpty');
+  if(!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const projectId=new URLSearchParams(location.search).get('id');
+  if(projectId) openProjectAddModal(projectId);
+},true);
+
 /* V1 — estructura preparada para crecer: ficha base + especificaciones por categoría. */
 const products = [
   {id:1, name:"Vruna", slug:"vruna", brand:"Nihm", sku:"NIHM-VRUNA", collection:"—", designer:"—", manufacturer:"Nihm", year:"—", category:"Mobiliario", subcategory:"Silla", description:"Silla de líneas contemporáneas para proyectos de interiorismo.", images:["Foto principal","Vista lateral","Detalle material"], variants:["Natural"], materials:["Madera"], construction:"Madera", finish:["Madera natural"], surfaceTexture:"Lisa", colors:["Natural"], dimensions:{width:"—",height:"—",depth:"—"}, style:["Contemporáneo"], applications:["Residencial","Comercial"], indoorOutdoor:"Interior", price:null, currency:"PEN", priceLastUpdated:"—", availability:"Consultar", leadTime:"—", minimumOrder:"—", warranty:"—", countryOfOrigin:"Perú", certifications:[], maintenance:"—", files:{CAD:[],SKP:[],RVT:[],BIM:["3D"],textures:[],PDF:[]}, supplier:{website:"—",contact:"—",showroom:"—"}, sample:{available:false,size:"—"}, tone1:"#e6dfd3",tone2:"#c8bcaa"},
@@ -340,7 +351,7 @@ function renderProjectPage(){
       @media(max-width:760px){.ci-project-v2{padding:0 5vw 60px!important}.ci-project-v2 .ci-top,.ci-project-v2 .ci-heading,.ci-project-v2 .ci-section-head{display:block!important}.ci-project-v2 .ci-heading{padding-bottom:18px!important}.ci-project-v2 .ci-section{margin-top:40px!important}.ci-project-v2 .ci-header{display:none!important}.ci-project-v2 .ci-row{display:grid!important;grid-template-columns:1fr 1fr!important;row-gap:14px!important;column-gap:16px!important;padding:18px 0!important}.ci-project-v2 .ci-product{grid-column:1/-1!important}.ci-project-v2 .ci-value:nth-of-type(2){grid-column:1!important}.ci-project-v2 .ci-value:nth-of-type(3){grid-column:2!important}.ci-project-v2 .ci-value:nth-of-type(4){grid-column:1/-1!important}.ci-project-v2 .ci-buy{grid-column:1!important}.ci-project-v2 .ci-edit{grid-column:2!important;justify-self:end!important}.ci-project-v2 .ci-edit-panel{grid-column:1/-1!important}.ci-project-v2 .ci-form{grid-template-columns:1fr 1fr!important}.ci-project-v2 .ci-actions{justify-content:flex-start!important}}
     </style>
 
-    <div class="project-page-top ci-top"><a class="back-link" href="index.html">← Volver al catálogo</a><button class="project-top-action" id="projectAddProduct">＋ Agregar producto</button></div>
+    <div class="project-page-top ci-top"><a class="back-link" href="index.html">← Volver al catálogo</a><button type="button" class="project-top-action" id="projectAddProduct">＋ Agregar producto</button></div>
 
     <div class="project-page-heading ci-heading">
       <div><p class="eyebrow">PROYECTO</p><h1>${esc(project.name)}</h1><p class="project-meta ci-meta">${items.length} ${items.length===1?'producto':'productos'}${project.client?` · ${esc(project.client)}`:''}${project.location?` · ${esc(project.location)}`:''}</p></div>
@@ -434,8 +445,8 @@ function renderProjectPage(){
     const panel=sel.closest('.ci-edit-panel');
     syncQuantityInput(panel?.querySelector('[data-edit-field="quantity"]'),sel.value,true);
   }));
-  $('projectAddProduct')?.addEventListener('click',()=>openProjectAddModal(project.id));
-  $('projectAddEmpty')?.addEventListener('click',()=>openProjectAddModal(project.id));
+  $('projectAddProduct')?.addEventListener('click',(e)=>{e.preventDefault();e.stopPropagation();openProjectAddModal(project.id);});
+  $('projectAddEmpty')?.addEventListener('click',(e)=>{e.preventDefault();e.stopPropagation();openProjectAddModal(project.id);});
 }
 
 function openProjectAddModal(projectId){
@@ -494,14 +505,15 @@ function openProjectAddModal(projectId){
         <div class="ci-add-field"><label>MERMA</label><select id="ciAddWasteMode"><option value="none">No aplicar</option><option value="percent">Aplicar %</option></select></div>
         <div class="ci-add-field ci-add-waste-value" id="ciAddWasteWrap" style="display:none"><label>PORCENTAJE DE MERMA</label><input id="ciAddWaste" type="number" min="0" step="0.1" value="10"></div>
       </div>
-      <form class="ci-add-actions" id="ciAddForm"><button type="button" class="ci-add-cancel" data-add-close>Cancelar</button><button type="submit" class="ci-add-save" id="ciAddSave">Agregar producto</button></form>`;
+      <div class="ci-add-actions" id="ciAddForm"><button type="button" class="ci-add-cancel" data-add-close>Cancelar</button><button type="button" class="ci-add-save" id="ciAddSave">Agregar producto</button></div>`;
     syncQuantityInput($('ciAddQty'),$('ciAddUnit').value,false);
     $('ciAddUnit').onchange=()=>syncQuantityInput($('ciAddQty'),$('ciAddUnit').value,true);
     $('ciAddWasteMode').onchange=()=>{$('ciAddWasteWrap').style.display=$('ciAddWasteMode').value==='percent'?'block':'none'};
-    $('ciAddForm').addEventListener('submit',async(e)=>{
+    $('ciAddForm').addEventListener('click',async(e)=>{
+      const saveBtn=e.target.closest?.('#ciAddSave');
+      if(!saveBtn) return;
       e.preventDefault();
       e.stopPropagation();
-      const saveBtn=$('ciAddSave');
       try{
         if(!selected){toast('Primero selecciona un producto.');return;}
         if(!supabaseClient || !authUser){toast('La sesión todavía no está lista.');return;}
