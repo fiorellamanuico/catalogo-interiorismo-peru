@@ -25,6 +25,17 @@ async function initSupabaseAuth(){
 }
 function renderAuthUI(){
   document.querySelectorAll('.site-header nav').forEach(nav=>{
+    const isCatalogPage = location.pathname.endsWith('/') || location.pathname.endsWith('/index.html') || location.pathname === 'index.html';
+
+    if(isCatalogPage && !nav.querySelector('.add-product-nav')){
+      const addBtn=document.createElement('a');
+      addBtn.className='add-product-nav';
+      addBtn.href='producto-nuevo.html';
+      addBtn.textContent='＋ Agregar producto';
+      addBtn.style.cssText='display:inline-flex;align-items:center;gap:6px;margin-left:10px;padding:8px 12px;border:1px solid currentColor;border-radius:999px;text-decoration:none;font-size:12px;line-height:1;';
+      nav.appendChild(addBtn);
+    }
+
     if(nav.querySelector('.auth-user')) return;
     const wrap=document.createElement('span');
     wrap.className='auth-user';
