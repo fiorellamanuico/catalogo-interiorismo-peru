@@ -104,3 +104,35 @@ footer{padding:28px 7vw;border-top:1px solid var(--line);display:flex;justify-co
 
 /* V1.2.5 · autenticación */
 .auth-user{display:inline-flex;align-items:center;gap:10px;margin-left:10px;padding-left:12px;border-left:1px solid #ddd6cc;font-size:11px;color:#756e65}.auth-user>span{max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.logout-btn{border:1px solid #d9d2c8;background:#fff;border-radius:8px;padding:7px 10px;font:inherit;font-size:11px;cursor:pointer}.logout-btn:hover{background:#f6f3ee}@media(max-width:760px){.auth-user>span{display:none}.auth-user{padding-left:8px;margin-left:4px}.logout-btn{padding:7px 9px}}
+
+/* V1.5.0.1 — imágenes reales de producto: evitar placeholder curvo sobre fotos y mostrar la primera imagen desde el inicio */
+.page-gallery-main.has-real-image{background:#eee !important;}
+.page-gallery-main.has-real-image:after{display:none;}
+.page-gallery-main.has-real-image #pageGalleryImage{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;z-index:1;}
+.page-gallery-main.has-real-image button,.page-gallery-main.has-real-image #pageCounter{z-index:3;}
+.page-gallery-main.has-real-image #pageGalleryLabel{display:none;}
+.page-thumb:has(img){padding:0;overflow:hidden;background:#eee !important;}
+.page-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+
+
+/* V1.5.0.2 — evita mostrar "Producto no encontrado" mientras Supabase termina de cargar */
+.product-loading{
+  min-height:60vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:14px;
+  color:#777;
+  font-size:14px;
+}
+.product-loading p{margin:0}
+.product-loading-dot{
+  width:10px;
+  height:10px;
+  border:1px solid currentColor;
+  border-top-color:transparent;
+  border-radius:50%;
+  animation:productLoadingSpin .8s linear infinite;
+}
+@keyframes productLoadingSpin{to{transform:rotate(360deg)}}

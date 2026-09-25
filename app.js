@@ -4,6 +4,7 @@ let authUser = null;
 const productDbIds = new Map();
 let favoritesReady = false;
 let projectsReady = false;
+let catalogReady = false;
 const projectDbItems = new Map();
 
 async function initSupabaseAuth(){
@@ -158,6 +159,7 @@ async function initSupabaseCatalog(){
     else { products.push(local); bySlug.set(row.slug,local); }
   });
 
+  catalogReady=true;
   return true;
 }
 
@@ -806,6 +808,10 @@ function isRealImageUrl(url){ return /^https?:\/\//i.test(String(url||'')); }
 
 function renderProductPage(){
   const mount=$('productPage'); if(!mount) return;
+  if(!catalogReady){
+    mount.innerHTML=`<div class="product-loading"><span class="product-loading-dot"></span><p>Cargando producto…</p></div>`;
+    return;
+  }
   const slug=new URLSearchParams(location.search).get('slug');
   const p=products.find(x=>x.slug===slug);
   if(!p){
@@ -827,19 +833,21 @@ function renderProductPage(){
     detail('Garantía',p.warranty),detail('Origen',p.countryOfOrigin),detail('Precio actualizado',p.priceLastUpdated),
     detail('Mantenimiento',p.maintenance),technicalDetails(p)
   ];
+  const firstIsReal=isRealImageUrl(usableImages[0]);
   const mainStyle=imageBackgroundStyle(usableImages[0],p.tone1,p.tone2);
   mount.innerHTML=`<div class="product-page-wrap">
     <a class="back-link" href="index.html">← Volver al catálogo</a>
     <div class="product-page-grid">
       <div>
-        <div class="page-gallery-main" id="pageGallery" style="${mainStyle}">
+        <div class="page-gallery-main ${firstIsReal?'has-real-image':''}" id="pageGallery" style="${mainStyle}">
+          ${firstIsReal?`<img id="pageGalleryImage" src="${escAttrValue(usableImages[0])}" alt="${escAttrValue(p.name)}" loading="eager" decoding="async">`:''}
           <span id="pageGalleryLabel" aria-hidden="true"></span>
           <button id="pagePrev" aria-label="Imagen anterior">‹</button>
           <button id="pageNext" aria-label="Imagen siguiente">›</button>
           <span id="pageCounter">1 / ${usableImages.length}</span>
         </div>
         <div class="page-gallery-thumbs">
-          ${usableImages.map((im,i)=>`<button aria-label="Imagen ${i+1}" class="page-thumb ${i===0?'active':''}" data-page-gallery="${i}" style="${imageBackgroundStyle(im,p.tone1,p.tone2)}"></button>`).join('')}
+          ${usableImages.map((im,i)=>`<button aria-label="Imagen ${i+1}" class="page-thumb ${i===0?'active':''}" data-page-gallery="${i}" style="${isRealImageUrl(im)?'':' '+imageBackgroundStyle(im,p.tone1,p.tone2)}">${isRealImageUrl(im)?`<img src="${escAttrValue(im)}" alt="${escAttrValue(p.name)} · imagen ${i+1}" loading="lazy" decoding="async">`:''}</button>`).join('')}
         </div>
       </div>
       <div class="product-page-info">
@@ -859,8 +867,25 @@ function renderProductPage(){
   const show=i=>{
     gi=(i+usableImages.length)%usableImages.length;
     const url=usableImages[gi];
-    $('pageGallery').style.cssText=imageBackgroundStyle(url,p.tone1,p.tone2);
-    $('pageGalleryLabel').textContent=isRealImageUrl(url)?'':'';
+    const gallery=$('pageGallery');
+    const real=isRealImageUrl(url);
+    gallery.classList.toggle('has-real-image',real);
+    gallery.style.cssText=imageBackgroundStyle(url,p.tone1,p.tone2);
+    let image=$('pageGalleryImage');
+    if(real){
+      if(!image){
+        image=document.createElement('img');
+        image.id='pageGalleryImage';
+        gallery.insertBefore(image,$('pageGalleryLabel'));
+      }
+      image.src=url;
+      image.alt=`${p.name} · imagen ${gi+1}`;
+      image.loading='eager';
+      image.decoding='async';
+    }else if(image){
+      image.remove();
+    }
+    $('pageGalleryLabel').textContent='';
     $('pageCounter').textContent=`${gi+1} / ${usableImages.length}`;
     document.querySelectorAll('[data-page-gallery]').forEach((b,j)=>b.classList.toggle('active',j===gi));
   };
