@@ -476,6 +476,18 @@ function openProjectAddModal(projectId){
 
   const existingIds=new Set(projectItemsFor(project).map(i=>i.product_id));
   let selected=null;
+  const quantityStepForUnit=(unit)=>['und.','set'].includes(String(unit||'').toLowerCase())?1:0.1;
+  const syncAddQuantityInput=(input,unit,normalize=true)=>{
+    if(!input) return;
+    const step=quantityStepForUnit(unit);
+    input.step=String(step);
+    if(normalize){
+      const value=Number(input.value);
+      if(Number.isFinite(value)){
+        input.value=step===1?String(Math.max(0,Math.round(value))):String(Math.round(Math.max(0,value)*10)/10);
+      }
+    }
+  };
   const renderList=()=>{
     const q=($('ciAddSearch')?.value||'').trim().toLowerCase();
     const cat=$('ciAddCategory')?.value||'';
@@ -506,8 +518,8 @@ function openProjectAddModal(projectId){
         <div class="ci-add-field ci-add-waste-value" id="ciAddWasteWrap" style="display:none"><label>PORCENTAJE DE MERMA</label><input id="ciAddWaste" type="number" min="0" step="0.1" value="10"></div>
       </div>
       <div class="ci-add-actions" id="ciAddForm"><button type="button" class="ci-add-cancel" data-add-close>Cancelar</button><button type="button" class="ci-add-save" id="ciAddSave">Agregar producto</button></div>`;
-    syncQuantityInput($('ciAddQty'),$('ciAddUnit').value,false);
-    $('ciAddUnit').onchange=()=>syncQuantityInput($('ciAddQty'),$('ciAddUnit').value,true);
+    syncAddQuantityInput($('ciAddQty'),$('ciAddUnit').value,false);
+    $('ciAddUnit').onchange=()=>syncAddQuantityInput($('ciAddQty'),$('ciAddUnit').value,true);
     $('ciAddWasteMode').onchange=()=>{$('ciAddWasteWrap').style.display=$('ciAddWasteMode').value==='percent'?'block':'none'};
     $('ciAddSave').addEventListener('click',async(e)=>{
       const saveBtn=e.currentTarget;
@@ -549,7 +561,10 @@ function openProjectAddModal(projectId){
       }
     });
   };
-  modal.querySelectorAll('[data-add-close]').forEach(el=>el.addEventListener('click',(e)=>{e.preventDefault();e.stopPropagation();modal.remove();}));
+  modal.addEventListener('click',(e)=>{
+    const closeEl=e.target.closest('[data-add-close]');
+    if(closeEl){e.preventDefault();e.stopPropagation();modal.remove();}
+  });
   $('ciAddSearch').addEventListener('input',renderList);
   $('ciAddCategory').addEventListener('change',renderList);
   modal.addEventListener('keydown',e=>{if(e.key==='Escape')modal.remove()});
