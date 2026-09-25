@@ -416,7 +416,7 @@ function renderProjectPage(){
     const purchaseFactor=Math.max(.001,Number(get('purchase_factor')?.value)||1);
     const mode=get('merma_mode')?.value||'none';
     const waste=mode==='percent'?Math.max(0,Number(get('waste_percent')?.value)||0):null;
-    const calculated=Number((quantity*(waste===null?1:1+waste/100)).toFixed(3));
+    const calculated=Number((quantity*(1+waste/100)).toFixed(3));
     const purchaseQuantity=purchaseFactor>0?Math.ceil(calculated/purchaseFactor):null;
     const payload={room,quantity,unit,purchase_unit:purchaseUnit,purchase_factor:purchaseFactor,waste_percent:waste,calculated_quantity:calculated,purchase_quantity:purchaseQuantity};
     const saveBtn=row.querySelector('[data-save-edit]');
@@ -536,8 +536,8 @@ function openProjectAddModal(projectId){
         const unit=$('ciAddUnit').value||'und.';
         const purchaseUnit=($('ciAddPurchaseUnit').value||'').trim()||unit;
         const purchaseFactor=Math.max(.001,Number($('ciAddFactor').value)||1);
-        const waste=$('ciAddWasteMode').value==='percent'?Math.max(0,Number($('ciAddWaste').value)||0):null;
-        const calculated=Number((quantity*(waste===null?1:1+waste/100)).toFixed(3));
+        const waste=$('ciAddWasteMode').value==='percent'?Math.max(0,Number($('ciAddWaste').value)||0):0;
+        const calculated=Number((quantity*(1+waste/100)).toFixed(3));
         const purchaseQuantity=Math.ceil(calculated/purchaseFactor);
         saveBtn.disabled=true; saveBtn.textContent='Agregando…';
         const payload={project_id:project.id,product_id:productDbId,room,quantity,unit,waste_percent:waste,calculated_quantity:calculated,purchase_unit:purchaseUnit,purchase_factor:purchaseFactor,purchase_quantity:purchaseQuantity,added_by:authUser.id};
