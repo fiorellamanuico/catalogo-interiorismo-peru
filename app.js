@@ -46,6 +46,97 @@ function renderAuthUI(){
 }
 function escAuth(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
 
+async function initSupabaseCatalog(){
+  if(!supabaseClient || !authUser) return false;
+
+  const {data:dbProducts,error}=await supabaseClient
+    .from('products')
+    .select('id,name,slug,brand_id,category_id,subcategory,sku,collection,description,designer,manufacturer,year,material,finish,surface_texture,style,applications,indoor_outdoor,dimensions,availability,lead_time,minimum_order,warranty,country_of_origin,maintenance,main_image_url,status,created_by,color,variants,price,currency,price_updated_at,certifications,source_url,last_verified_at,technical_specs')
+    .order('created_at',{ascending:true});
+  if(error){
+    console.error(error);
+    toast('No se pudieron cargar los productos desde Supabase.');
+    return false;
+  }
+
+  const [{data:dbBrands,error:brandError},{data:dbCategories,error:categoryError}]=await Promise.all([
+    supabaseClient.from('brands').select('id,name'),
+    supabaseClient.from('categories').select('id,name')
+  ]);
+  if(brandError || categoryError){
+    console.error(brandError||categoryError);
+    toast('No se pudieron cargar las marcas o categorías.');
+    return false;
+  }
+
+  const brandMap=new Map((dbBrands||[]).map(x=>[x.id,x.name]));
+  const categoryMap=new Map((dbCategories||[]).map(x=>[x.id,x.name]));
+  const bySlug=new Map(products.map(p=>[p.slug,p]));
+  let nextLocalId=products.reduce((max,p)=>Math.max(max,Number(p.id)||0),0)+1;
+
+  (dbProducts||[]).forEach(row=>{
+    const materials=arr(row.material).length?arr(row.material):['—'];
+    const finishes=arr(row.finish).length?arr(row.finish):['—'];
+    const styles=arr(row.style).length?arr(row.style):['—'];
+    const applications=arr(row.applications).length?arr(row.applications):[];
+    const colors=arr(row.color).length?arr(row.color):[];
+    const variants=Array.isArray(row.variants)?row.variants:(row.variants?[row.variants]:[]);
+    const technical=row.technical_specs&&typeof row.technical_specs==='object'?row.technical_specs:{};
+    const dims=typeof row.dimensions==='object' && row.dimensions ? row.dimensions : {value:row.dimensions||'—'};
+    const existing=bySlug.get(row.slug);
+    const local={
+      id:existing?.id || nextLocalId++,
+      dbId:row.id,
+      name:row.name||'Producto',
+      slug:row.slug,
+      brand:brandMap.get(row.brand_id)||'Marca por añadir',
+      sku:row.sku||'—',
+      collection:row.collection||'—',
+      designer:row.designer||'—',
+      manufacturer:row.manufacturer||'—',
+      year:row.year||'—',
+      category:categoryMap.get(row.category_id)||'Sin categoría',
+      subcategory:row.subcategory||'—',
+      description:row.description||'—',
+      images:row.main_image_url?[row.main_image_url]:(existing?.images||['Foto principal']),
+      variants:variants.length?variants:(existing?.variants||[]),
+      materials,
+      construction:existing?.construction||'—',
+      finish:finishes,
+      surfaceTexture:row.surface_texture||existing?.surfaceTexture||'—',
+      colors:colors.length?colors:(existing?.colors||[]),
+      dimensions:dims,
+      style:styles,
+      applications,
+      indoorOutdoor:row.indoor_outdoor||'—',
+      price:row.price==null?null:Number(row.price),
+      currency:row.currency||'PEN',
+      priceLastUpdated:row.price_updated_at||'—',
+      availability:row.availability||'Consultar',
+      leadTime:row.lead_time||'—',
+      minimumOrder:row.minimum_order||'—',
+      warranty:row.warranty||'—',
+      countryOfOrigin:row.country_of_origin||'—',
+      certifications:row.certifications||[],
+      maintenance:row.maintenance||'—',
+      files:existing?.files||{CAD:[],SKP:[],RVT:[],BIM:[],textures:[],PDF:[]},
+      supplier:existing?.supplier||{website:'—',contact:'—',showroom:'—'},
+      sample:existing?.sample||{available:false,size:'—'},
+      technical,
+      sourceUrl:row.source_url||'',
+      lastVerifiedAt:row.last_verified_at||'',
+      status:row.status||'draft',
+      createdBy:row.created_by||null,
+      tone1:existing?.tone1||'#e6dfd3',
+      tone2:existing?.tone2||'#c8bcaa'
+    };
+    if(existing) Object.assign(existing,local);
+    else { products.push(local); bySlug.set(row.slug,local); }
+  });
+
+  return true;
+}
+
 async function initSupabaseFavorites(){
   if(!supabaseClient || !authUser) return false;
   const slugs=products.map(p=>p.slug);
@@ -642,6 +733,7 @@ function initCommonUI(){
   const ok=await initSupabaseAuth();
   if(!ok) return;
   initCommonUI();
+  await initSupabaseCatalog();
   await initSupabaseFavorites();
   await initSupabaseProjects();
   initIndexPage();
