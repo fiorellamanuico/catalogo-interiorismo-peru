@@ -864,7 +864,7 @@ function renderProductPage(){
         <p class="page-brand">${esc(p.brand)} · ${esc(p.collection)}</p>
         <div class="page-price">${p.price==null?'Consultar precio':esc(p.currency==='PEN'?`S/ ${p.price}`:p.price)}</div>
         <p class="page-description">${esc(p.description)}</p>
-        <div class="page-actions"><button class="primary" id="pageAdd">＋ Añadir a proyecto</button><button id="pageFav">♡ Guardar</button></div>
+        <div class="page-actions"><button class="primary" id="pageAdd">＋ Añadir a proyecto</button><button id="pageFav">♡ Guardar</button>${p.createdBy && authUser && p.createdBy===authUser.id ? '<a class="product-edit-link" href="producto-editar.html?slug='+encodeURIComponent(p.slug)+'">✎ Editar ficha</a>' : ''}</div>
         <div class="page-section"><h2>Información del producto</h2><div class="detail-grid">${detailRows.join('')}</div></div>
         <div class="page-section"><h2>Archivos para diseño</h2><div class="resource-list">${files.length?files.map(f=>`<span class="resource">${esc(f)}</span>`).join(''):'<span class="empty">Todavía no hay archivos cargados.</span>'}</div></div>
         <div class="page-section"><h2>Documentación técnica</h2><div class="document-list">${documentFiles.length?documentFiles.map((f,i)=>`<button type="button" class="document-item" data-document-index="${i}"><span class="document-icon">↧</span><span class="document-copy"><strong>${esc(f.file_name)}</strong><small>${esc(documentTypeLabel(f.file_type))}</small></span><span class="document-action">Abrir</span></button>`).join(''):'<span class="empty">Todavía no hay documentos técnicos cargados.</span>'}</div></div>
