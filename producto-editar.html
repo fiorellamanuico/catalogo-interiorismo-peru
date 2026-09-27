@@ -18,7 +18,7 @@
     .actions{display:flex;justify-content:flex-end;gap:10px;padding:24px 30px;background:#fff}.btn{border:1px solid #222;padding:12px 18px;background:#fff;cursor:pointer;font-size:13px}.btn.primary{background:#151515;color:#fff}.btn:disabled{opacity:.5;cursor:not-allowed}
     .status{margin:0 30px 24px;padding:12px 14px;font-size:13px;display:none}.status.show{display:block}.status.ok{background:#edf7ef}.status.error{background:#fff0ee;color:#9a2116}.required{color:#a12a20}
     .tech{display:none;margin-top:18px;padding-top:20px;border-top:1px solid var(--line)}.tech.show{display:block}.tech h3{font-size:14px;margin:0 0 15px}.chipnote{font-size:11px;color:#888;margin-top:8px}
-.image-preview{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:14px}.image-preview figure{margin:0;position:relative;border:1px solid var(--line);background:var(--paper);aspect-ratio:1/1;overflow:hidden}.image-preview img{width:100%;height:100%;object-fit:cover;display:block}.image-preview figcaption{position:absolute;left:6px;bottom:6px;background:rgba(255,255,255,.92);padding:4px 6px;font-size:10px}.uploading-note{font-size:12px;color:#777;margin-top:10px}.image-preview-empty{font-size:12px;color:#999;padding:14px 0}@media(max-width:760px){.image-preview{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.image-preview{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-top:14px}.image-card{margin:0;position:relative;border:1px solid var(--line);background:var(--paper);overflow:hidden}.image-card.is-primary{border-color:#222;box-shadow:inset 0 0 0 1px #222}.image-card img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block}.image-card-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px;background:#fff;border-top:1px solid var(--line)}.image-card-footer label{font-size:10px;display:flex;align-items:center;gap:5px;cursor:pointer}.image-card-footer input{accent-color:#151515}.image-card-tag{font-size:9px;letter-spacing:.8px;text-transform:uppercase;color:#777}.uploading-note{font-size:12px;color:#777;margin-top:10px}.image-preview-empty{font-size:12px;color:#999;padding:14px 0}@media(max-width:760px){.image-preview{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:760px){header{padding:0 20px}.nav a:not(.keep){display:none}main{padding:34px 16px 70px}.title{font-size:40px}.grid{grid-template-columns:1fr}.full{grid-column:auto}.section{padding:22px}.actions{padding:20px 22px}.actions .btn{flex:1}}
 
     .document-upload-list{display:grid;gap:10px;margin-top:14px}.document-upload-row{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:10px;align-items:center;border:1px solid var(--line);padding:10px 12px;background:#fff}.document-upload-name{font-size:13px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.document-upload-row select{width:100%;border:1px solid #dcd9d3;background:#fff;padding:10px 11px;font:inherit;font-size:13px}.document-upload-empty{font-size:12px;color:#999;padding:10px 0}@media(max-width:760px){.document-upload-row{grid-template-columns:1fr}}
@@ -95,7 +95,7 @@
 
     <section class="section">
       <h2>Fotos del producto</h2>
-      <p>Las fotos existentes se mantienen. Puedes agregar nuevas imágenes.</p>
+      <p>Las fotos existentes se mantienen. Puedes agregar nuevas imágenes. Elige una como <strong>foto principal</strong>; esa será la primera que verá quien abra la ficha.</p>
       <div class="field full">
         <label>Imágenes</label>
         <input id="product_images" type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple />
@@ -135,6 +135,7 @@
   const sb = createClient(cfg.url, cfg.publishableKey);
   const $ = id => document.getElementById(id);
   let currentUser = null, categories = [], brands = [], selectedDocuments = [], product = null;
+  let primarySelection = null;
   const slug = new URLSearchParams(location.search).get('slug');
   const documentTypes = [
     ['technical_sheet','Ficha técnica'],['catalog','Catálogo'],['installation','Instalación'],
@@ -170,16 +171,35 @@
     if(!files.length){box.innerHTML='<div class="document-upload-empty">No hay documentos técnicos existentes.</div>';return;}
     box.innerHTML='<div class="hint" style="margin-bottom:8px">Documentos actuales</div>'+files.map(f=>`<div class="document-upload-row"><div class="document-upload-name">${escapeHtml(f.file_name)}</div><div class="hint">${escapeHtml(documentTypes.find(x=>x[0]===f.file_type)?.[1]||'Documento')}</div></div>`).join('');
   }
-  function renderExistingImages(urls){
+  function renderExistingImages(files){
     const box=$('existingImagePreview'); if(!box)return;
-    const real=urls.filter(u=>/^https?:\/\//i.test(String(u||'')));
+    const real=(files||[]).filter(f=>/^https?:\/\//i.test(String(f?.file_url||'')));
     if(!real.length){box.innerHTML='<div class="image-preview-empty">No hay fotos existentes.</div>';return;}
-    box.innerHTML=real.map((u,i)=>`<figure><img src="${escapeAttr(u)}" alt=""><figcaption>${i===0?'Actual principal':'Actual '+(i+1)}</figcaption></figure>`).join('');
+    if(!primarySelection){
+      const primary=real.find(f=>f.is_primary)||real[0];
+      primarySelection=`existing:${primary.id}`;
+    }
+    box.innerHTML=real.map((f,i)=>{
+      const checked=primarySelection===`existing:${f.id}`;
+      return `<figure class="image-card ${checked?'is-primary':''}"><img src="${escapeAttr(f.file_url)}" alt=""><div class="image-card-footer"><label><input type="radio" name="primary_image" value="existing:${escapeAttr(f.id)}" ${checked?'checked':''}> Principal</label><span class="image-card-tag">${checked?'Principal':'Foto '+(i+1)}</span></div></figure>`;
+    }).join('');
+    box.querySelectorAll('input[name="primary_image"]').forEach(r=>r.onchange=()=>{primarySelection=r.value;renderExistingImages(real);renderNewImagePreview();});
+  }
+  function renderNewImagePreview(){
+    const box=$('imagePreview'); if(!box)return;
+    const files=Array.from($('product_images')?.files||[]);
+    if(!files.length){box.innerHTML='';return;}
+    box.innerHTML=files.map((f,i)=>{
+      const value=`new:${i}`; const checked=primarySelection===value;
+      return `<figure class="image-card ${checked?'is-primary':''}"><img src="${URL.createObjectURL(f)}" alt=""><div class="image-card-footer"><label><input type="radio" name="primary_image" value="${value}" ${checked?'checked':''}> Principal</label><span class="image-card-tag">${checked?'Principal':'Nueva '+(i+1)}</span></div></figure>`;
+    }).join('');
+    box.querySelectorAll('input[name="primary_image"]').forEach(r=>r.onchange=()=>{primarySelection=r.value;renderExistingImages(product.imageFiles||[]);renderNewImagePreview();});
   }
   function escapeHtml(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
   function escapeAttr(v){return escapeHtml(v).replace(/`/g,'&#096;');}
   async function uploadImages(productId,files){
     const uploaded=[];
+    const existingCount=(product.imageFiles||[]).length;
     for(let i=0;i<files.length;i++){
       const file=files[i]; if(file.size>10*1024*1024)throw new Error(`La imagen "${file.name}" supera los 10 MB.`);
       const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
@@ -187,10 +207,19 @@
       const path=`products/${productId}/${Date.now()}-${i}-${safe}.${ext}`;
       const {error}=await sb.storage.from('product-images').upload(path,file,{upsert:false,contentType:file.type,cacheControl:'3600'}); if(error)throw error;
       const {data}=sb.storage.from('product-images').getPublicUrl(path); const url=data?.publicUrl; if(!url)throw new Error('No se pudo obtener la URL de la imagen.');
-      uploaded.push({product_id:productId,file_type:'image',file_name:file.name,file_url:url,is_primary:false,sort_order:i,created_by:currentUser.id});
+      uploaded.push({product_id:productId,file_type:'image',file_name:file.name,file_url:url,is_primary:false,sort_order:existingCount+i,created_by:currentUser.id});
     }
-    if(uploaded.length){const {error}=await sb.from('product_files').insert(uploaded);if(error)throw error;}
+    if(uploaded.length){const {data,error}=await sb.from('product_files').insert(uploaded).select('*');if(error)throw error;return data||uploaded;}
     return uploaded;
+  }
+  async function setPrimaryImage(productId,fileId,fileUrl){
+    if(!fileId||!fileUrl) return;
+    const {error:clearError}=await sb.from('product_files').update({is_primary:false}).eq('product_id',productId).eq('file_type','image');
+    if(clearError) throw clearError;
+    const {error:primaryError}=await sb.from('product_files').update({is_primary:true,sort_order:0}).eq('id',fileId).eq('product_id',productId);
+    if(primaryError) throw primaryError;
+    const {error:productError}=await sb.from('products').update({main_image_url:fileUrl}).eq('id',productId).eq('created_by',currentUser.id);
+    if(productError) throw productError;
   }
   async function uploadDocuments(productId,docs){
     const uploaded=[];
@@ -210,7 +239,7 @@
     setVal('name',product.name);setVal('brand_id',product.brand_id);setVal('category_id',product.category_id);setVal('subcategory',product.subcategory);setVal('sku',product.sku);setVal('collection',product.collection);setVal('description',product.description);
     setVal('material',product.material);setVal('construction',product.construction);setVal('finish',product.finish);setVal('surface_texture',product.surface_texture);setVal('color',product.color);setVal('dimensions',typeof product.dimensions==='object'?Object.values(product.dimensions||{}).filter(Boolean).join(' × '):product.dimensions);setVal('style',product.style);setVal('indoor_outdoor',product.indoor_outdoor||'both');setVal('applications',product.applications);setVal('variants',product.variants);setVal('designer',product.designer);setVal('manufacturer',product.manufacturer);setVal('year',product.year);setVal('country_of_origin',product.country_of_origin);setVal('maintenance',product.maintenance);setVal('certifications',product.certifications);setVal('price',product.price);setVal('currency',product.currency||'PEN');setVal('availability',product.availability);setVal('lead_time',product.lead_time);setVal('minimum_order',product.minimum_order);setVal('warranty',product.warranty);setVal('source_url',product.source_url);
     renderTech(product.technical_specs||{});
-    renderExistingImages(product.images||[]);renderExistingDocs(product.documentFiles||[]);
+    renderExistingImages(product.imageFiles||[]);renderNewImagePreview();renderExistingDocs(product.documentFiles||[]);
   }
   async function init(){
     if(!cfg.url||!cfg.publishableKey){showStatus('Supabase no está configurado.');return;}
@@ -220,9 +249,16 @@
     if(cRes.error||bRes.error){showStatus('No pudimos cargar categorías o marcas.');return;} if(pRes.error||!pRes.data){showStatus('No encontramos el producto.');return;}
     product=pRes.data;if(product.created_by!==currentUser.id){showStatus('Solo puedes editar productos que hayas creado.');$('productForm').style.display='none';return;}
     categories=cRes.data||[];brands=bRes.data||[];categories.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;$('category_id').appendChild(o)});brands.forEach(b=>{const o=document.createElement('option');o.value=b.id;o.textContent=b.name;$('brand_id').appendChild(o)});
-    const {data:files}=await sb.from('product_files').select('*').eq('product_id',product.id).order('sort_order').order('created_at'); product.documentFiles=(files||[]).filter(f=>f.file_type!=='image'); product.images=(files||[]).filter(f=>f.file_type==='image').sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)).map(f=>f.file_url); populate();
+    const {data:files}=await sb.from('product_files').select('*').eq('product_id',product.id).order('sort_order').order('created_at'); product.documentFiles=(files||[]).filter(f=>f.file_type!=='image'); product.imageFiles=(files||[]).filter(f=>f.file_type==='image').sort((a,b)=>(Number(b.is_primary)-Number(a.is_primary)) || ((a.sort_order||0)-(b.sort_order||0))).map(f=>({...f})); product.images=product.imageFiles.map(f=>f.file_url); primarySelection=null; populate();
     $('category_id').addEventListener('change',()=>renderTech({}));
-    $('product_images').addEventListener('change',()=>{const files=Array.from($('product_images').files||[]);const box=$('imagePreview');if(!files.length){box.innerHTML='<div class="image-preview-empty">No has seleccionado imágenes nuevas.</div>';return;}if(files.length>10){showStatus('Puedes seleccionar máximo 10 imágenes nuevas.');$('product_images').value='';box.innerHTML='';return;}box.innerHTML=files.map((f,i)=>`<figure><img src="${URL.createObjectURL(f)}" alt=""><figcaption>Nueva ${i+1}</figcaption></figure>`).join('');});
+    $('product_images').addEventListener('change',()=>{
+      const files=Array.from($('product_images').files||[]);
+      if(!files.length){renderNewImagePreview();return;}
+      if(files.length>10){showStatus('Puedes seleccionar máximo 10 imágenes nuevas.');$('product_images').value='';renderNewImagePreview();return;}
+      if(!primarySelection) primarySelection=`new:0`;
+      renderExistingImages(product.imageFiles||[]);
+      renderNewImagePreview();
+    });
     $('product_documents').addEventListener('change',()=>{const files=Array.from($('product_documents').files||[]);if(files.length>10){showStatus('Puedes seleccionar máximo 10 documentos nuevos.');$('product_documents').value='';selectedDocuments=[];renderDocumentPreview();return;}selectedDocuments=files.map(file=>({file,type:'other'}));renderDocumentPreview();});
   }
   $('productForm').addEventListener('submit',async e=>{
@@ -233,8 +269,24 @@
       const payload={name,brand_id:$('brand_id').value||null,category_id:$('category_id').value||null,subcategory:$('subcategory').value.trim()||null,sku:$('sku').value.trim()||null,collection:$('collection').value.trim()||null,description:$('description').value.trim()||null,designer:$('designer').value.trim()||null,manufacturer:$('manufacturer').value.trim()||null,year:$('year').value===''?null:Number($('year').value),material:$('material').value.trim()||null,finish:$('finish').value.trim()||null,surface_texture:$('surface_texture').value.trim()||null,style:$('style').value.trim()||null,applications:$('applications').value.split(',').map(v=>v.trim()).filter(Boolean),indoor_outdoor:$('indoor_outdoor').value,dimensions:$('dimensions').value.trim()||null,availability:$('availability').value.trim()||null,lead_time:$('lead_time').value.trim()||null,minimum_order:$('minimum_order').value.trim()||null,warranty:$('warranty').value.trim()||null,country_of_origin:$('country_of_origin').value.trim()||null,maintenance:$('maintenance').value.trim()||null,color:$('color').value.trim()||null,variants:$('variants').value.split(',').map(v=>v.trim()).filter(Boolean),price:$('price').value===''?null:Number($('price').value),currency:$('currency').value,price_updated_at:$('price').value!==''?new Date().toISOString():product.price_updated_at,certifications:$('certifications').value.split(',').map(v=>v.trim()).filter(Boolean),source_url:$('source_url').value.trim()||null,last_verified_at:new Date().toISOString(),technical_specs:tech};
       const {error}=await sb.from('products').update(payload).eq('id',product.id).eq('created_by',currentUser.id);if(error)throw error;
       const newImages=Array.from($('product_images').files||[]);let msg='';
-      if(newImages.length){$('save').textContent='Subiendo fotos…';const uploaded=await uploadImages(product.id,newImages);msg+=` ${uploaded.length} foto${uploaded.length===1?'':'s'} nueva${uploaded.length===1?'':'s'}.`;}
+      let uploadedImages=[];
+      if(newImages.length){$('save').textContent='Subiendo fotos…';uploadedImages=await uploadImages(product.id,newImages);msg+=` ${uploadedImages.length} foto${uploadedImages.length===1?'':'s'} nueva${uploadedImages.length===1?'':'s'}.`;}
       if(selectedDocuments.length){$('save').textContent='Subiendo documentos…';const uploaded=await uploadDocuments(product.id,selectedDocuments);msg+=` ${uploaded.length} documento${uploaded.length===1?'':'s'} nuevo${uploaded.length===1?'':'s'}.`;}
+      let primaryFileId=null, primaryFileUrl=null;
+      if(primarySelection?.startsWith('existing:')){
+        primaryFileId=primarySelection.slice('existing:'.length);
+        const found=(product.imageFiles||[]).find(f=>String(f.id)===String(primaryFileId));
+        primaryFileUrl=found?.file_url||null;
+      }else if(primarySelection?.startsWith('new:')){
+        const idx=Number(primarySelection.slice('new:'.length));
+        const found=uploadedImages[idx];
+        primaryFileId=found?.id||null; primaryFileUrl=found?.file_url||null;
+      }
+      if(!primaryFileId){
+        const fallback=(product.imageFiles||[]).find(f=>f.is_primary)||product.imageFiles?.[0]||uploadedImages[0];
+        primaryFileId=fallback?.id||null; primaryFileUrl=fallback?.file_url||null;
+      }
+      if(primaryFileId&&primaryFileUrl){$('save').textContent='Guardando foto principal…';await setPrimaryImage(product.id,primaryFileId,primaryFileUrl);}
       showStatus('Cambios guardados correctamente.'+msg,true);$('save').textContent='Guardado ✓';setTimeout(()=>location.href='producto.html?slug='+encodeURIComponent(product.slug),900);
     }catch(err){console.error(err);showStatus('No se pudieron guardar los cambios: '+(err.message||err));$('save').disabled=false;$('save').textContent='Guardar cambios';}
   });

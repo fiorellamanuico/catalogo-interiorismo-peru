@@ -94,7 +94,7 @@ async function initSupabaseCatalog(){
   dbFiles.forEach(file=>{
     if(file.file_type==='image'){
       if(!imagesByProduct.has(file.product_id)) imagesByProduct.set(file.product_id,[]);
-      imagesByProduct.get(file.product_id).push(file.file_url);
+      imagesByProduct.get(file.product_id).push(file);
     }else{
       if(!productDocumentFiles.has(file.product_id)) productDocumentFiles.set(file.product_id,[]);
       productDocumentFiles.get(file.product_id).push(file);
@@ -128,7 +128,7 @@ async function initSupabaseCatalog(){
       subcategory:row.subcategory||'—',
       description:row.description||'—',
       images:imagesByProduct.get(row.id)?.length
-        ? imagesByProduct.get(row.id)
+        ? imagesByProduct.get(row.id).slice().sort((a,b)=>(Number(b.is_primary)-Number(a.is_primary)) || ((a.sort_order||0)-(b.sort_order||0)) || String(a.created_at||'').localeCompare(String(b.created_at||''))).map(x=>x.file_url)
         : (row.main_image_url?[row.main_image_url]:(existing?.images||['Foto principal'])),
       variants:variants.length?variants:(existing?.variants||[]),
       materials,
