@@ -6,6 +6,7 @@ let favoritesReady = false;
 let projectsReady = false;
 let catalogReady = false;
 const projectDbItems = new Map();
+const productDocumentFiles = new Map();
 
 async function initSupabaseAuth(){
   const cfg=window.SUPABASE_CONFIG||{};
@@ -73,26 +74,31 @@ async function initSupabaseCatalog(){
   const brandMap=new Map((dbBrands||[]).map(x=>[x.id,x.name]));
   const categoryMap=new Map((dbCategories||[]).map(x=>[x.id,x.name]));
   const productIds=(dbProducts||[]).map(x=>x.id);
-  let dbImageFiles=[];
+  let dbFiles=[];
   if(productIds.length){
-    const {data:imageRows,error:imageError}=await supabaseClient
+    const {data:fileRows,error:fileError}=await supabaseClient
       .from('product_files')
       .select('id,product_id,file_type,file_name,file_url,is_primary,sort_order,created_at')
       .in('product_id',productIds)
-      .eq('file_type','image')
       .order('sort_order',{ascending:true})
       .order('created_at',{ascending:true});
-    if(imageError){
-      console.error(imageError);
-      toast('Los productos cargaron, pero no se pudieron cargar sus imágenes.');
+    if(fileError){
+      console.error(fileError);
+      toast('Los productos cargaron, pero no se pudieron cargar sus archivos.');
     }else{
-      dbImageFiles=imageRows||[];
+      dbFiles=fileRows||[];
     }
   }
   const imagesByProduct=new Map();
-  dbImageFiles.forEach(file=>{
-    if(!imagesByProduct.has(file.product_id)) imagesByProduct.set(file.product_id,[]);
-    imagesByProduct.get(file.product_id).push(file.file_url);
+  productDocumentFiles.clear();
+  dbFiles.forEach(file=>{
+    if(file.file_type==='image'){
+      if(!imagesByProduct.has(file.product_id)) imagesByProduct.set(file.product_id,[]);
+      imagesByProduct.get(file.product_id).push(file.file_url);
+    }else{
+      if(!productDocumentFiles.has(file.product_id)) productDocumentFiles.set(file.product_id,[]);
+      productDocumentFiles.get(file.product_id).push(file);
+    }
   });
   const bySlug=new Map(products.map(p=>[p.slug,p]));
   let nextLocalId=products.reduce((max,p)=>Math.max(max,Number(p.id)||0),0)+1;
@@ -145,6 +151,7 @@ async function initSupabaseCatalog(){
       certifications:row.certifications||[],
       maintenance:row.maintenance||'—',
       files:existing?.files||{CAD:[],SKP:[],RVT:[],BIM:[],textures:[],PDF:[]},
+      documentFiles:productDocumentFiles.get(row.id)||[],
       supplier:existing?.supplier||{website:'—',contact:'—',showroom:'—'},
       sample:existing?.sample||{available:false,size:'—'},
       technical,
@@ -822,6 +829,7 @@ function renderProductPage(){
   const images=(p.images||[]).filter(Boolean);
   const usableImages=images.length?images:['Foto principal'];
   const files=allFiles(p);
+  const documentFiles=Array.isArray(p.documentFiles)?p.documentFiles:[];
   const detailRows=[
     detail('SKU',p.sku),detail('Colección',p.collection),detail('Diseñador',p.designer),
     detail('Fabricante',p.manufacturer),detail('Año',p.year),detail('Materialidad',p.materials.join(', ')),
@@ -859,6 +867,7 @@ function renderProductPage(){
         <div class="page-actions"><button class="primary" id="pageAdd">＋ Añadir a proyecto</button><button id="pageFav">♡ Guardar</button></div>
         <div class="page-section"><h2>Información del producto</h2><div class="detail-grid">${detailRows.join('')}</div></div>
         <div class="page-section"><h2>Archivos para diseño</h2><div class="resource-list">${files.length?files.map(f=>`<span class="resource">${esc(f)}</span>`).join(''):'<span class="empty">Todavía no hay archivos cargados.</span>'}</div></div>
+        <div class="page-section"><h2>Documentación técnica</h2><div class="document-list">${documentFiles.length?documentFiles.map((f,i)=>`<button type="button" class="document-item" data-document-index="${i}"><span class="document-icon">↧</span><span class="document-copy"><strong>${esc(f.file_name)}</strong><small>${esc(documentTypeLabel(f.file_type))}</small></span><span class="document-action">Abrir</span></button>`).join(''):'<span class="empty">Todavía no hay documentos técnicos cargados.</span>'}</div></div>
         ${isRealImageUrl(usableImages[0])?'<div class="image-source-note">Imágenes guardadas en la biblioteca del producto.</div>':''}
       </div>
     </div>
@@ -898,5 +907,27 @@ function renderProductPage(){
     $('pageFav').textContent=state.favorites.has(p.id)?'♥ Guardado':'♡ Guardar';
   };
   $('pageFav').textContent=state.favorites.has(p.id)?'♥ Guardado':'♡ Guardar';
+  document.querySelectorAll('[data-document-index]').forEach(btn=>btn.onclick=async()=>{
+    const file=documentFiles[Number(btn.dataset.documentIndex)];
+    if(!file) return;
+    btn.disabled=true;
+    const old=btn.querySelector('.document-action');
+    if(old) old.textContent='Abriendo…';
+    try{
+      const {data,error}=await supabaseClient.storage.from('product-documents').createSignedUrl(file.file_url,3600);
+      if(error) throw error;
+      if(!data?.signedUrl) throw new Error('No se pudo generar el enlace del documento.');
+      window.open(data.signedUrl,'_blank','noopener');
+    }catch(error){
+      console.error(error);
+      toast('No se pudo abrir el documento.');
+    }finally{
+      btn.disabled=false;
+      if(old) old.textContent='Abrir';
+    }
+  });
+}
+function documentTypeLabel(type){
+  return ({technical_sheet:'Ficha técnica',catalog:'Catálogo',installation:'Instalación',maintenance:'Mantenimiento',certification:'Certificación',other:'Otro'})[type]||'Documento';
 }
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>{ if(supabaseClient){ renderProductPage(); renderProjectPage(); } }); else if(supabaseClient){ renderProductPage(); renderProjectPage(); }
