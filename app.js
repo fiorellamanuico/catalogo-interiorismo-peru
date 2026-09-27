@@ -848,7 +848,7 @@ function renderProductPage(){
     <div class="product-page-grid">
       <div>
         <div class="page-gallery-main ${firstIsReal?'has-real-image':''}" id="pageGallery" style="${mainStyle}">
-          ${firstIsReal?`<img id="pageGalleryImage" src="${escAttrValue(usableImages[0])}" alt="${escAttrValue(p.name)}" loading="eager" decoding="async">`:''}
+          ${firstIsReal?`<img id="pageGalleryImage" src="${escAttrValue(usableImages[0])}" alt="${escAttrValue(p.name)}" loading="eager" decoding="async" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;z-index:1;cursor:zoom-in;">`:''}
           <span id="pageGalleryLabel" aria-hidden="true"></span>
           <button id="pagePrev" aria-label="Imagen anterior">‹</button>
           <button id="pageNext" aria-label="Imagen siguiente">›</button>
@@ -885,12 +885,15 @@ function renderProductPage(){
       if(!image){
         image=document.createElement('img');
         image.id='pageGalleryImage';
+        image.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;z-index:1;cursor:zoom-in;';
         gallery.insertBefore(image,$('pageGalleryLabel'));
+        image.addEventListener('click',()=>openGalleryLightbox(usableImages[gi],`${p.name} · imagen ${gi+1}`));
       }
       image.src=url;
       image.alt=`${p.name} · imagen ${gi+1}`;
       image.loading='eager';
       image.decoding='async';
+      image.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;z-index:1;cursor:zoom-in;';
     }else if(image){
       image.remove();
     }
@@ -901,6 +904,24 @@ function renderProductPage(){
   $('pagePrev').onclick=()=>show(gi-1);
   $('pageNext').onclick=()=>show(gi+1);
   document.querySelectorAll('[data-page-gallery]').forEach(b=>b.onclick=()=>show(+b.dataset.pageGallery));
+  const openGalleryLightbox=(url,alt)=>{
+    if(!isRealImageUrl(url)) return;
+    document.querySelector('.ci-image-lightbox')?.remove();
+    const box=document.createElement('div');
+    box.className='ci-image-lightbox';
+    box.innerHTML=`<div class="ci-lightbox-backdrop"></div><div class="ci-lightbox-card" role="dialog" aria-modal="true"><button type="button" class="ci-lightbox-close" aria-label="Cerrar">×</button><img src="${escAttrValue(url)}" alt="${escAttrValue(alt)}"></div>`;
+    box.style.cssText='position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;';
+    box.querySelector('.ci-lightbox-backdrop').style.cssText='position:absolute;inset:0;background:rgba(20,20,20,.82);';
+    box.querySelector('.ci-lightbox-card').style.cssText='position:relative;z-index:1;max-width:94vw;max-height:94vh;display:flex;align-items:center;justify-content:center;';
+    const lbImg=box.querySelector('img'); lbImg.style.cssText='display:block;max-width:94vw;max-height:90vh;width:auto;height:auto;object-fit:contain;box-shadow:0 18px 50px rgba(0,0,0,.28);';
+    const close=()=>box.remove();
+    box.querySelector('.ci-lightbox-close').style.cssText='position:absolute;right:-10px;top:-10px;width:36px;height:36px;border:0;border-radius:50%;background:#fff;color:#222;font-size:24px;line-height:1;cursor:pointer;z-index:2;box-shadow:0 4px 15px rgba(0,0,0,.18);';
+    box.querySelector('.ci-lightbox-close').onclick=close;
+    box.querySelector('.ci-lightbox-backdrop').onclick=close;
+    box.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
+    document.body.appendChild(box); box.tabIndex=-1; box.focus();
+  };
+  $('pageGalleryImage')?.addEventListener('click',()=>openGalleryLightbox(usableImages[gi],`${p.name} · imagen ${gi+1}`));
   $('pageAdd').onclick=()=>openProjectPicker(p.id);
   $('pageFav').onclick=()=>{
     toggleFavorite(p.id);
