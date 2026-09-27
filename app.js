@@ -867,7 +867,7 @@ function renderProductPage(){
         <div class="page-actions"><button class="primary" id="pageAdd">＋ Añadir a proyecto</button><button id="pageFav">♡ Guardar</button>${p.createdBy && authUser && p.createdBy===authUser.id ? '<a class="product-edit-link" href="producto-editar.html?slug='+encodeURIComponent(p.slug)+'">✎ Editar ficha</a>' : ''}</div>
         <div class="page-section"><h2>Información del producto</h2><div class="detail-grid">${detailRows.join('')}</div></div>
         <div class="page-section"><h2>Archivos para diseño</h2><div class="resource-list">${files.length?files.map(f=>`<span class="resource">${esc(f)}</span>`).join(''):'<span class="empty">Todavía no hay archivos cargados.</span>'}</div></div>
-        <div class="page-section"><h2>Documentación técnica</h2><div class="document-list">${documentFiles.length?documentFiles.map((f,i)=>`<button type="button" class="document-item" data-document-index="${i}"><span class="document-icon">↧</span><span class="document-copy"><strong>${esc(f.file_name)}</strong><small>${esc(documentTypeLabel(f.file_type))}</small></span><span class="document-action">Abrir</span></button>`).join(''):'<span class="empty">Todavía no hay documentos técnicos cargados.</span>'}</div></div>
+        <div class="page-section"><h2>Documentación técnica</h2><div class="document-list">${documentFiles.length?documentFiles.map((f,i)=>`<div class="document-item"><span class="document-icon">↧</span><span class="document-copy"><strong>${esc(f.file_name)}</strong><small>${esc(documentTypeLabel(f.file_type))}</small></span><div class="document-actions"><button type="button" class="document-action-btn document-open" data-document-open="${i}">Abrir</button><button type="button" class="document-action-btn document-download" data-document-download="${i}">Descargar</button></div></div>`).join(''):'<span class="empty">Todavía no hay documentos técnicos cargados.</span>'}</div></div>
         ${isRealImageUrl(usableImages[0])?'<div class="image-source-note">Imágenes guardadas en la biblioteca del producto.</div>':''}
       </div>
     </div>
@@ -907,23 +907,51 @@ function renderProductPage(){
     $('pageFav').textContent=state.favorites.has(p.id)?'♥ Guardado':'♡ Guardar';
   };
   $('pageFav').textContent=state.favorites.has(p.id)?'♥ Guardado':'♡ Guardar';
-  document.querySelectorAll('[data-document-index]').forEach(btn=>btn.onclick=async()=>{
-    const file=documentFiles[Number(btn.dataset.documentIndex)];
+  const getDocumentUrl=async(file)=>{
+    if(!file) throw new Error('Documento no encontrado.');
+    const {data,error}=await supabaseClient.storage.from('product-documents').createSignedUrl(file.file_url,3600);
+    if(error) throw error;
+    if(!data?.signedUrl) throw new Error('No se pudo generar el enlace del documento.');
+    return data.signedUrl;
+  };
+  document.querySelectorAll('[data-document-open]').forEach(btn=>btn.onclick=async()=>{
+    const file=documentFiles[Number(btn.dataset.documentOpen)];
     if(!file) return;
     btn.disabled=true;
-    const old=btn.querySelector('.document-action');
-    if(old) old.textContent='Abriendo…';
+    const old=btn.textContent; btn.textContent='Abriendo…';
     try{
-      const {data,error}=await supabaseClient.storage.from('product-documents').createSignedUrl(file.file_url,3600);
-      if(error) throw error;
-      if(!data?.signedUrl) throw new Error('No se pudo generar el enlace del documento.');
-      window.open(data.signedUrl,'_blank','noopener');
+      const signedUrl=await getDocumentUrl(file);
+      window.open(signedUrl,'_blank','noopener');
     }catch(error){
       console.error(error);
       toast('No se pudo abrir el documento.');
     }finally{
-      btn.disabled=false;
-      if(old) old.textContent='Abrir';
+      btn.disabled=false; btn.textContent=old;
+    }
+  });
+  document.querySelectorAll('[data-document-download]').forEach(btn=>btn.onclick=async()=>{
+    const file=documentFiles[Number(btn.dataset.documentDownload)];
+    if(!file) return;
+    btn.disabled=true;
+    const old=btn.textContent; btn.textContent='Preparando…';
+    try{
+      const signedUrl=await getDocumentUrl(file);
+      const response=await fetch(signedUrl);
+      if(!response.ok) throw new Error('No se pudo descargar el archivo.');
+      const blob=await response.blob();
+      const objectUrl=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=objectUrl;
+      a.download=file.file_name||'documento';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(()=>URL.revokeObjectURL(objectUrl),1000);
+    }catch(error){
+      console.error(error);
+      toast('No se pudo descargar el documento.');
+    }finally{
+      btn.disabled=false; btn.textContent=old;
     }
   });
 }
