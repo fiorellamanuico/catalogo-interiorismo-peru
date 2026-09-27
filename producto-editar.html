@@ -116,7 +116,7 @@
     </section>
 
     <section class="section">
-      <h2>Especificaciones técnicas</h2><p>Campos específicos según la categoría seleccionada.</p>
+      <h2>Especificaciones técnicas</h2><p id="techIntro">Selecciona una categoría para mostrar los campos técnicos correspondientes.</p>
       <div id="techFields" class="tech"></div>
     </section>
 
@@ -154,11 +154,22 @@
   function showStatus(msg,ok=false){const el=$('status');el.textContent=msg;el.className='status show '+(ok?'ok':'error');}
   function clearStatus(){const el=$('status');el.className='status';el.textContent='';}
   function renderTech(values={}){
-    const cat=categories.find(c=>c.id===$('category_id').value); const box=$('techFields'); box.innerHTML='';
-    if(!cat) {box.className='tech'; return;}
-    const fields=techBySlug[cat.slug]||[]; if(!fields.length){box.className='tech';return;}
-    box.className='tech show'; const grid=document.createElement('div');grid.className='grid';
-    fields.forEach(([key,label,ph])=>{const wrap=document.createElement('div');wrap.className='field';const lab=document.createElement('label');lab.textContent=label;wrap.appendChild(lab);const input=document.createElement('input');input.id='tech_'+key;input.dataset.tech=key;input.placeholder=ph||'';input.value=values[key]||'';wrap.appendChild(input);grid.appendChild(wrap);}); box.appendChild(grid);
+    const cat=categories.find(c=>c.id===$('category_id').value);
+    const box=$('techFields'); box.innerHTML='';
+    const intro=$('techIntro');
+    if(!cat){box.className='tech'; if(intro)intro.textContent='Selecciona una categoría para mostrar los campos técnicos correspondientes.'; return;}
+    const fields=techBySlug[cat.slug]||[];
+    if(!fields.length){box.className='tech'; if(intro)intro.textContent='Esta categoría todavía no tiene campos técnicos específicos configurados.'; return;}
+    box.className='tech show';
+    if(intro)intro.textContent=`Campos técnicos específicos para ${cat.name}. Si un dato no aplica, déjalo vacío.`;
+    const grid=document.createElement('div');grid.className='grid';
+    fields.forEach(([key,label,ph])=>{
+      const wrap=document.createElement('div');wrap.className='field';
+      const lab=document.createElement('label');lab.textContent=label;wrap.appendChild(lab);
+      const input=document.createElement('input');input.id='tech_'+key;input.dataset.tech=key;input.placeholder=ph||'';input.value=values[key]||'';
+      wrap.appendChild(input);grid.appendChild(wrap);
+    });
+    box.appendChild(grid);
   }
   function renderDocumentPreview(){
     const box=$('documentPreview'); if(!box)return;

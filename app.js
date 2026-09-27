@@ -351,15 +351,15 @@ function technicalDetails(p){
 
   const furniture=[
     ['dimensions','Dimensiones'],
-    ['load','Capacidad de carga'],
-    ['seatHeight','Altura de asiento'],
+    ['load_capacity','Capacidad de carga'],
+    ['seat_height','Altura de asiento'],
     ['upholstery','Tapizado'],
     ['structure','Estructura']
   ];
   const lighting=[
     ['power','Potencia'],
     ['lumens','Lúmenes'],
-    ['colorTemperature','Temperatura de color'],
+    ['color_temperature','Temperatura de color'],
     ['CRI','CRI'],
     ['IP','IP'],
     ['dimmable','Dimerizable']
@@ -368,25 +368,25 @@ function technicalDetails(p){
     ['composition','Composición'],
     ['width','Ancho'],
     ['martindale','Martindale'],
-    ['fireRating','Resistencia al fuego'],
+    ['fire_rating','Resistencia al fuego'],
     ['cleaning','Limpieza']
   ];
   const ceramics=[
     ['format','Formato'],
     ['thickness','Espesor'],
     ['rectified','Rectificado'],
-    ['shadeVariation','Variación de tono'],
-    ['slipRating','Antideslizante'],
-    ['piecesPerBox','Piezas/caja'],
-    ['coveragePerBox','m²/caja'],
-    ['recommendedGrout','Boquilla recomendada']
+    ['shade_variation','Variación de tono'],
+    ['slip_rating','Antideslizante'],
+    ['pieces_per_box','Piezas/caja'],
+    ['coverage_per_box','m²/caja'],
+    ['grout','Boquilla recomendada']
   ];
   const sanitary=[
     ['installation','Instalación'],
-    ['waterConsumption','Consumo de agua'],
+    ['water_consumption','Consumo de agua'],
     ['pressure','Presión'],
-    ['flowRate','Caudal'],
-    ['certifications','Certificaciones']
+    ['pressure_flow','Caudal'],
+    ['certifications_bath','Certificaciones']
   ];
 
   let fields=furniture;
@@ -992,7 +992,7 @@ function renderProductPage(){
 
       <section class="page-section ci-section"><div class="ci-section-head"><div><span class="ci-section-number">01 · IDENTIFICACIÓN</span><h2>Identificación</h2><p class="ci-section-note">Datos principales para reconocer y especificar la pieza.</p></div></div><div class="detail-grid">${identification.join('')}</div></section>
       <section class="page-section ci-section"><div class="ci-section-head"><div><span class="ci-section-number">02 · MATERIALIDAD Y DISEÑO</span><h2>Materialidad y diseño</h2><p class="ci-section-note">Características visuales, constructivas y de aplicación.</p></div></div><div class="detail-grid">${materiality.join('')}</div></section>
-      <section class="page-section ci-section"><div class="ci-section-head"><div><span class="ci-section-number">03 · ESPECIFICACIÓN TÉCNICA</span><h2>${esc(technicalSectionTitle(p))}</h2><p class="ci-section-note">Campos técnicos aplicables a esta categoría.</p></div></div><div class="detail-grid">${technicalDetails(p)||'<span class="ci-empty">Todavía no hay especificaciones técnicas registradas.</span>'}</div></section>
+      <section class="page-section ci-section"><div class="ci-section-head"><div><span class="ci-section-number">03 · ESPECIFICACIÓN TÉCNICA</span><h2>${esc(technicalSectionTitle(p))}</h2><p class="ci-section-note">Campos técnicos específicos de la categoría. Si un dato no aplica, déjalo vacío.</p></div></div><div class="detail-grid">${technicalDetails(p)||'<span class="ci-empty">Todavía no hay especificaciones técnicas registradas.</span>'}</div></section>
       <section class="page-section ci-section"><div class="ci-section-head"><div><span class="ci-section-number">04 · INFORMACIÓN COMERCIAL</span><h2>Información comercial</h2><p class="ci-section-note">Datos necesarios para cotizar y coordinar la compra.</p></div></div><div class="detail-grid">${commercial.join('')}</div></section>
       <section class="page-section ci-section"><div class="ci-section-head"><div><span class="ci-section-number">05 · ORIGEN Y MANTENIMIENTO</span><h2>Origen y mantenimiento</h2></div></div><div class="detail-grid">${origin.join('')}</div></section>
       <section class="page-section ci-section"><div class="ci-section-head"><div><span class="ci-section-number">06 · ARCHIVOS PARA DISEÑO</span><h2>Archivos para diseño</h2><p class="ci-section-note">Documentación disponible para desarrollar y especificar el producto.</p></div></div>
