@@ -813,6 +813,12 @@ function imageBackgroundStyle(url,tone1,tone2){
 }
 function isRealImageUrl(url){ return /^https?:\/\//i.test(String(url||'')); }
 
+function formatFichaDate(value){
+  if(!value) return '';
+  const d=new Date(value);
+  if(Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleDateString('es-PE',{day:'2-digit',month:'short',year:'numeric'});
+}
 function renderProductPage(){
   const mount=$('productPage'); if(!mount) return;
   if(!catalogReady){
@@ -851,13 +857,23 @@ function renderProductPage(){
   mount.innerHTML=`
     <style>
       .ci-product-sheet{max-width:1180px;margin:0 auto}
-      .ci-product-sheet .ci-section{margin-top:28px;padding:26px 0;border-top:1px solid rgba(35,35,35,.12)}
-      .ci-product-sheet .ci-section:first-of-type{margin-top:34px}
-      .ci-product-sheet .ci-section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:18px}
-      .ci-product-sheet .ci-section-head h2{margin:4px 0 0;font-size:20px;letter-spacing:-.02em}
-      .ci-product-sheet .ci-section-number{font-size:11px;letter-spacing:.14em;color:#8a8176;font-weight:700}
-      .ci-product-sheet .ci-section-note{margin:5px 0 0;color:#777;font-size:13px}
+      .ci-product-sheet .product-page-grid{grid-template-columns:minmax(0,1.08fr) minmax(330px,.92fr);gap:48px;align-items:start}
+      .ci-product-sheet .page-gallery-main{min-height:420px}
+      .ci-product-sheet .page-gallery-thumbs{margin-top:10px}
+      .ci-product-sheet .page-thumb{width:82px;height:62px}
+      .ci-product-sheet .product-page-info{padding-top:8px}
+      .ci-product-sheet .product-page-info h1{font-size:42px;line-height:1.02;letter-spacing:-.035em;margin:7px 0 10px}
+      .ci-product-sheet .page-price{font-size:21px;font-weight:600;margin:12px 0 16px}
+      .ci-product-sheet .page-description{max-width:520px;line-height:1.6}
+      .ci-product-sheet .ci-section{margin-top:20px;padding:20px 0;border-top:1px solid rgba(35,35,35,.12)}
+      .ci-product-sheet .ci-section:first-of-type{margin-top:28px}
+      .ci-product-sheet .ci-section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:12px}
+      .ci-product-sheet .ci-section-head h2{margin:3px 0 0;font-size:19px;letter-spacing:-.02em}
+      .ci-product-sheet .ci-section-number{font-size:10px;letter-spacing:.14em;color:#8a8176;font-weight:700}
+      .ci-product-sheet .ci-section-note{margin:4px 0 0;color:#777;font-size:12px}
       .ci-product-sheet .detail-grid{margin-top:0}
+      .ci-product-sheet .ci-section .detail{padding-top:8px;padding-bottom:8px}
+      .ci-product-sheet .ci-docs{display:grid;gap:10px}
       .ci-product-sheet .ci-docs{display:grid;gap:10px}
       .ci-product-sheet .document-item{display:grid;grid-template-columns:38px 1fr auto;align-items:center;gap:14px;padding:15px 16px;border:1px solid rgba(35,35,35,.12);border-radius:10px;background:#fff}
       .ci-product-sheet .document-icon{width:34px;height:34px;display:grid;place-items:center;border-radius:8px;background:#f1eee9;font-size:16px}
@@ -865,7 +881,15 @@ function renderProductPage(){
       .ci-product-sheet .document-actions{display:flex;gap:8px}.ci-product-sheet .document-action-btn{padding:8px 12px;border:1px solid rgba(35,35,35,.16);border-radius:7px;background:#fff;cursor:pointer;font-size:12px}.ci-product-sheet .document-open{background:#292622;color:#fff;border-color:#292622}
       .ci-product-sheet .ci-source{display:flex;flex-wrap:wrap;gap:18px;margin-top:18px;padding-top:16px;border-top:1px solid rgba(35,35,35,.08);font-size:12px;color:#777}.ci-product-sheet .ci-source a{color:inherit;text-decoration:underline;text-underline-offset:3px}
       .ci-product-sheet .ci-empty{color:#888;font-size:13px}
-      @media(max-width:760px){.ci-product-sheet .ci-section-head{display:block}.ci-product-sheet .document-item{grid-template-columns:34px 1fr}.ci-product-sheet .document-actions{grid-column:2}.ci-product-sheet .document-action-btn{flex:1}}
+      @media(max-width:760px){
+        .ci-product-sheet .product-page-grid{grid-template-columns:1fr;gap:28px}
+        .ci-product-sheet .page-gallery-main{min-height:320px}
+        .ci-product-sheet .product-page-info h1{font-size:34px}
+        .ci-product-sheet .ci-section-head{display:block}
+        .ci-product-sheet .document-item{grid-template-columns:34px 1fr}
+        .ci-product-sheet .document-actions{grid-column:2}
+        .ci-product-sheet .document-action-btn{flex:1}
+      }
     </style>
     <div class="product-page-wrap ci-product-sheet">
       <a class="back-link" href="index.html">← Volver al catálogo</a>
@@ -892,7 +916,7 @@ function renderProductPage(){
       <section class="page-section ci-section"><div class="ci-section-head"><div><span class="ci-section-number">06 · ARCHIVOS PARA DISEÑO</span><h2>Archivos para diseño</h2><p class="ci-section-note">Documentación disponible para desarrollar y especificar el producto.</p></div></div>
         <div class="ci-docs">${documentFiles.length?documentFiles.map((f,i)=>`<div class="document-item"><span class="document-icon">↧</span><span class="document-copy"><strong>${esc(f.file_name)}</strong><small>${esc(documentTypeLabel(f.file_type))}</small></span><div class="document-actions"><button type="button" class="document-action-btn document-open" data-document-open="${i}">Abrir</button><button type="button" class="document-action-btn document-download" data-document-download="${i}">Descargar</button></div></div>`).join(''):'<span class="ci-empty">Todavía no hay documentos técnicos cargados.</span>'}</div>
         ${files.length?`<div class="resource-list" style="margin-top:14px">${files.map(f=>`<span class="resource">${esc(f)}</span>`).join('')}</div>`:''}
-        ${(p.sourceUrl||p.lastVerifiedAt||p.priceLastUpdated)?`<div class="ci-source">${p.sourceUrl?`<span>Fuente: <a href="${escAttrValue(p.sourceUrl)}" target="_blank" rel="noopener">Visitar fuente ↗</a></span>`:''}${p.lastVerifiedAt?`<span>Última verificación: ${esc(p.lastVerifiedAt)}</span>`:''}${p.priceLastUpdated?`<span>Precio actualizado: ${esc(p.priceLastUpdated)}</span>`:''}</div>`:''}
+        ${(p.sourceUrl||p.lastVerifiedAt||p.priceLastUpdated)?`<div class="ci-source">${p.sourceUrl?`<span>Fuente: <a href="${escAttrValue(p.sourceUrl)}" target="_blank" rel="noopener">Visitar fuente ↗</a></span>`:''}${p.lastVerifiedAt?`<span>Última verificación: ${esc(formatFichaDate(p.lastVerifiedAt))}</span>`:''}${p.priceLastUpdated?`<span>Precio actualizado: ${esc(formatFichaDate(p.priceLastUpdated))}</span>`:''}</div>`:''}
       </section>
     </div>`;
   let gi=0;
