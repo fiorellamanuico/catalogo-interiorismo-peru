@@ -830,152 +830,95 @@ function renderProductPage(){
   const usableImages=images.length?images:['Foto principal'];
   const files=allFiles(p);
   const documentFiles=Array.isArray(p.documentFiles)?p.documentFiles:[];
-  const detailRows=[
+  const identification=[
     detail('SKU',p.sku),detail('Colección',p.collection),detail('Diseñador',p.designer),
-    detail('Fabricante',p.manufacturer),detail('Año',p.year),detail('Materialidad',p.materials.join(', ')),
-    detail('Construcción',p.construction),detail('Acabado',p.finish.join(', ')),detail('Textura',p.surfaceTexture),
-    detail('Color',p.colors.join(', ')),detail('Variantes',p.variants.join(', ')),
-    detail('Dimensiones',Object.values(p.dimensions||{}).filter(Boolean).join(' × ')||'—'),
-    detail('Estilo',p.style.join(', ')),detail('Uso',p.applications.join(', ')),detail('Interior / exterior',p.indoorOutdoor),
-    detail('Disponibilidad',p.availability),detail('Tiempo de entrega',p.leadTime),detail('Pedido mínimo',p.minimumOrder),
-    detail('Garantía',p.warranty),detail('Origen',p.countryOfOrigin),detail('Precio actualizado',p.priceLastUpdated),
-    detail('Mantenimiento',p.maintenance),technicalDetails(p)
+    detail('Fabricante',p.manufacturer),detail('Año',p.year)
   ];
+  const materiality=[
+    detail('Materialidad',p.materials.join(', ')),detail('Construcción',p.construction),
+    detail('Acabado',p.finish.join(', ')),detail('Textura',p.surfaceTexture),detail('Color',p.colors.join(', ')),
+    detail('Variantes',p.variants.join(', ')),detail('Dimensiones',Object.values(p.dimensions||{}).filter(Boolean).join(' × ')||'—'),
+    detail('Estilo',p.style.join(', ')),detail('Aplicaciones',p.applications.join(', ')),detail('Interior / exterior',p.indoorOutdoor)
+  ];
+  const commercial=[
+    detail('Precio',p.price==null?'Consultar precio':(p.currency==='PEN'?`S/ ${p.price}`:p.price)),
+    detail('Moneda',p.currency),detail('Disponibilidad',p.availability),detail('Tiempo de entrega',p.leadTime),
+    detail('Pedido mínimo',p.minimumOrder),detail('Garantía',p.warranty),detail('Precio actualizado',p.priceLastUpdated)
+  ];
+  const origin=[detail('Origen',p.countryOfOrigin),detail('Mantenimiento',p.maintenance)];
   const firstIsReal=isRealImageUrl(usableImages[0]);
   const mainStyle=imageBackgroundStyle(usableImages[0],p.tone1,p.tone2);
-  mount.innerHTML=`<div class="product-page-wrap">
-    <a class="back-link" href="index.html">← Volver al catálogo</a>
-    <div class="product-page-grid">
-      <div>
-        <div class="page-gallery-main ${firstIsReal?'has-real-image':''}" id="pageGallery" style="${mainStyle}">
-          ${firstIsReal?`<img id="pageGalleryImage" src="${escAttrValue(usableImages[0])}" alt="${escAttrValue(p.name)}" loading="eager" decoding="async" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;z-index:1;cursor:zoom-in;">`:''}
-          <span id="pageGalleryLabel" aria-hidden="true"></span>
-          <button id="pagePrev" aria-label="Imagen anterior">‹</button>
-          <button id="pageNext" aria-label="Imagen siguiente">›</button>
-          <span id="pageCounter">1 / ${usableImages.length}</span>
+  mount.innerHTML=`
+    <style>
+      .ci-product-sheet{max-width:1180px;margin:0 auto}
+      .ci-product-sheet .ci-section{margin-top:28px;padding:26px 0;border-top:1px solid rgba(35,35,35,.12)}
+      .ci-product-sheet .ci-section:first-of-type{margin-top:34px}
+      .ci-product-sheet .ci-section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:18px}
+      .ci-product-sheet .ci-section-head h2{margin:4px 0 0;font-size:20px;letter-spacing:-.02em}
+      .ci-product-sheet .ci-section-number{font-size:11px;letter-spacing:.14em;color:#8a8176;font-weight:700}
+      .ci-product-sheet .ci-section-note{margin:5px 0 0;color:#777;font-size:13px}
+      .ci-product-sheet .detail-grid{margin-top:0}
+      .ci-product-sheet .ci-docs{display:grid;gap:10px}
+      .ci-product-sheet .document-item{display:grid;grid-template-columns:38px 1fr auto;align-items:center;gap:14px;padding:15px 16px;border:1px solid rgba(35,35,35,.12);border-radius:10px;background:#fff}
+      .ci-product-sheet .document-icon{width:34px;height:34px;display:grid;place-items:center;border-radius:8px;background:#f1eee9;font-size:16px}
+      .ci-product-sheet .document-copy{display:grid;gap:4px;min-width:0}.ci-product-sheet .document-copy strong{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ci-product-sheet .document-copy small{font-size:11px;color:#777;text-transform:uppercase;letter-spacing:.08em}
+      .ci-product-sheet .document-actions{display:flex;gap:8px}.ci-product-sheet .document-action-btn{padding:8px 12px;border:1px solid rgba(35,35,35,.16);border-radius:7px;background:#fff;cursor:pointer;font-size:12px}.ci-product-sheet .document-open{background:#292622;color:#fff;border-color:#292622}
+      .ci-product-sheet .ci-source{display:flex;flex-wrap:wrap;gap:18px;margin-top:18px;padding-top:16px;border-top:1px solid rgba(35,35,35,.08);font-size:12px;color:#777}.ci-product-sheet .ci-source a{color:inherit;text-decoration:underline;text-underline-offset:3px}
+      .ci-product-sheet .ci-empty{color:#888;font-size:13px}
+      @media(max-width:760px){.ci-product-sheet .ci-section-head{display:block}.ci-product-sheet .document-item{grid-template-columns:34px 1fr}.ci-product-sheet .document-actions{grid-column:2}.ci-product-sheet .document-action-btn{flex:1}}
+    </style>
+    <div class="product-page-wrap ci-product-sheet">
+      <a class="back-link" href="index.html">← Volver al catálogo</a>
+      <div class="product-page-grid">
+        <div>
+          <div class="page-gallery-main ${firstIsReal?'has-real-image':''}" id="pageGallery" style="${mainStyle}">
+            ${firstIsReal?`<img id="pageGalleryImage" src="${escAttrValue(usableImages[0])}" alt="${escAttrValue(p.name)}" loading="eager" decoding="async" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;z-index:1;cursor:zoom-in;">`:''}
+            <span id="pageGalleryLabel" aria-hidden="true"></span><button id="pagePrev" aria-label="Imagen anterior">‹</button><button id="pageNext" aria-label="Imagen siguiente">›</button><span id="pageCounter">1 / ${usableImages.length}</span>
+          </div>
+          <div class="page-gallery-thumbs">${usableImages.map((im,i)=>`<button aria-label="Imagen ${i+1}" class="page-thumb ${i===0?'active':''}" data-page-gallery="${i}" style="${isRealImageUrl(im)?'':' '+imageBackgroundStyle(im,p.tone1,p.tone2)}">${isRealImageUrl(im)?`<img src="${escAttrValue(im)}" alt="${escAttrValue(p.name)} · imagen ${i+1}" loading="lazy" decoding="async">`:''}</button>`).join('')}</div>
         </div>
-        <div class="page-gallery-thumbs">
-          ${usableImages.map((im,i)=>`<button aria-label="Imagen ${i+1}" class="page-thumb ${i===0?'active':''}" data-page-gallery="${i}" style="${isRealImageUrl(im)?'':' '+imageBackgroundStyle(im,p.tone1,p.tone2)}">${isRealImageUrl(im)?`<img src="${escAttrValue(im)}" alt="${escAttrValue(p.name)} · imagen ${i+1}" loading="lazy" decoding="async">`:''}</button>`).join('')}
+        <div class="product-page-info">
+          <p class="eyebrow">${esc(p.category)} · ${esc(p.subcategory)}</p><h1>${esc(p.name)}</h1><p class="page-brand">${esc(p.brand)}${p.collection?` · ${esc(p.collection)}`:''}</p>
+          <div class="page-price">${p.price==null?'Consultar precio':esc(p.currency==='PEN'?`S/ ${p.price}`:p.price)}</div><p class="page-description">${esc(p.description)}</p>
+          <div class="page-actions"><button class="primary" id="pageAdd">＋ Añadir a proyecto</button><button id="pageFav">♡ Guardar</button>${p.createdBy && authUser && p.createdBy===authUser.id ? '<a class="product-edit-link" href="producto-editar.html?slug='+encodeURIComponent(p.slug)+'">✎ Editar ficha</a>' : ''}</div>
         </div>
       </div>
-      <div class="product-page-info">
-        <p class="eyebrow">${esc(p.category)} · ${esc(p.subcategory)}</p>
-        <h1>${esc(p.name)}</h1>
-        <p class="page-brand">${esc(p.brand)} · ${esc(p.collection)}</p>
-        <div class="page-price">${p.price==null?'Consultar precio':esc(p.currency==='PEN'?`S/ ${p.price}`:p.price)}</div>
-        <p class="page-description">${esc(p.description)}</p>
-        <div class="page-actions"><button class="primary" id="pageAdd">＋ Añadir a proyecto</button><button id="pageFav">♡ Guardar</button>${p.createdBy && authUser && p.createdBy===authUser.id ? '<a class="product-edit-link" href="producto-editar.html?slug='+encodeURIComponent(p.slug)+'">✎ Editar ficha</a>' : ''}</div>
-        <div class="page-section"><h2>Información del producto</h2><div class="detail-grid">${detailRows.join('')}</div></div>
-        <div class="page-section"><h2>Archivos para diseño</h2><div class="resource-list">${files.length?files.map(f=>`<span class="resource">${esc(f)}</span>`).join(''):'<span class="empty">Todavía no hay archivos cargados.</span>'}</div></div>
-        <div class="page-section"><h2>Documentación técnica</h2><div class="document-list">${documentFiles.length?documentFiles.map((f,i)=>`<div class="document-item"><span class="document-icon">↧</span><span class="document-copy"><strong>${esc(f.file_name)}</strong><small>${esc(documentTypeLabel(f.file_type))}</small></span><div class="document-actions"><button type="button" class="document-action-btn document-open" data-document-open="${i}">Abrir</button><button type="button" class="document-action-btn document-download" data-document-download="${i}">Descargar</button></div></div>`).join(''):'<span class="empty">Todavía no hay documentos técnicos cargados.</span>'}</div></div>
-        ${isRealImageUrl(usableImages[0])?'<div class="image-source-note">Imágenes guardadas en la biblioteca del producto.</div>':''}
-      </div>
-    </div>
-  </div>`;
+
+      <section class="page-section ci-section"><div class="ci-section-head"><div><span class="ci-section-number">01 · IDENTIFICACIÓN</span><h2>Identificación</h2><p class="ci-section-note">Datos principales para reconocer y especificar la pieza.</p></div></div><div class="detail-grid">${identification.join('')}</div></section>
+      <section class="page-section ci-section"><div class="ci-section-head"><div><span class="ci-section-number">02 · MATERIALIDAD Y DISEÑO</span><h2>Materialidad y diseño</h2><p class="ci-section-note">Características visuales, constructivas y de aplicación.</p></div></div><div class="detail-grid">${materiality.join('')}</div></section>
+      <section class="page-section ci-section"><div class="ci-section-head"><div><span class="ci-section-number">03 · ESPECIFICACIÓN TÉCNICA</span><h2>Especificación técnica</h2><p class="ci-section-note">Información técnica disponible para la especificación.</p></div></div><div class="detail-grid">${technicalDetails(p)||'<span class="ci-empty">No hay especificaciones técnicas adicionales.</span>'}</div></section>
+      <section class="page-section ci-section"><div class="ci-section-head"><div><span class="ci-section-number">04 · INFORMACIÓN COMERCIAL</span><h2>Información comercial</h2><p class="ci-section-note">Datos necesarios para cotizar y coordinar la compra.</p></div></div><div class="detail-grid">${commercial.join('')}</div></section>
+      <section class="page-section ci-section"><div class="ci-section-head"><div><span class="ci-section-number">05 · ORIGEN Y MANTENIMIENTO</span><h2>Origen y mantenimiento</h2></div></div><div class="detail-grid">${origin.join('')}</div></section>
+      <section class="page-section ci-section"><div class="ci-section-head"><div><span class="ci-section-number">06 · ARCHIVOS PARA DISEÑO</span><h2>Archivos para diseño</h2><p class="ci-section-note">Documentación disponible para desarrollar y especificar el producto.</p></div></div>
+        <div class="ci-docs">${documentFiles.length?documentFiles.map((f,i)=>`<div class="document-item"><span class="document-icon">↧</span><span class="document-copy"><strong>${esc(f.file_name)}</strong><small>${esc(documentTypeLabel(f.file_type))}</small></span><div class="document-actions"><button type="button" class="document-action-btn document-open" data-document-open="${i}">Abrir</button><button type="button" class="document-action-btn document-download" data-document-download="${i}">Descargar</button></div></div>`).join(''):'<span class="ci-empty">Todavía no hay documentos técnicos cargados.</span>'}</div>
+        ${files.length?`<div class="resource-list" style="margin-top:14px">${files.map(f=>`<span class="resource">${esc(f)}</span>`).join('')}</div>`:''}
+        ${(p.sourceUrl||p.lastVerifiedAt||p.priceLastUpdated)?`<div class="ci-source">${p.sourceUrl?`<span>Fuente: <a href="${escAttrValue(p.sourceUrl)}" target="_blank" rel="noopener">Visitar fuente ↗</a></span>`:''}${p.lastVerifiedAt?`<span>Última verificación: ${esc(p.lastVerifiedAt)}</span>`:''}${p.priceLastUpdated?`<span>Precio actualizado: ${esc(p.priceLastUpdated)}</span>`:''}</div>`:''}
+      </section>
+    </div>`;
   let gi=0;
-  const show=i=>{
-    gi=(i+usableImages.length)%usableImages.length;
-    const url=usableImages[gi];
-    const gallery=$('pageGallery');
-    const real=isRealImageUrl(url);
-    gallery.classList.toggle('has-real-image',real);
-    gallery.style.cssText=imageBackgroundStyle(url,p.tone1,p.tone2);
-    let image=$('pageGalleryImage');
-    if(real){
-      if(!image){
-        image=document.createElement('img');
-        image.id='pageGalleryImage';
-        image.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;z-index:1;cursor:zoom-in;';
-        gallery.insertBefore(image,$('pageGalleryLabel'));
-        image.addEventListener('click',()=>openGalleryLightbox(usableImages[gi],`${p.name} · imagen ${gi+1}`));
-      }
-      image.src=url;
-      image.alt=`${p.name} · imagen ${gi+1}`;
-      image.loading='eager';
-      image.decoding='async';
-      image.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;z-index:1;cursor:zoom-in;';
-    }else if(image){
-      image.remove();
-    }
-    $('pageGalleryLabel').textContent='';
-    $('pageCounter').textContent=`${gi+1} / ${usableImages.length}`;
-    document.querySelectorAll('[data-page-gallery]').forEach((b,j)=>b.classList.toggle('active',j===gi));
-  };
-  $('pagePrev').onclick=()=>show(gi-1);
-  $('pageNext').onclick=()=>show(gi+1);
-  document.querySelectorAll('[data-page-gallery]').forEach(b=>b.onclick=()=>show(+b.dataset.pageGallery));
   const openGalleryLightbox=(url,alt)=>{
     if(!isRealImageUrl(url)) return;
     document.querySelector('.ci-image-lightbox')?.remove();
-    const box=document.createElement('div');
-    box.className='ci-image-lightbox';
+    const box=document.createElement('div');box.className='ci-image-lightbox';
     box.innerHTML=`<div class="ci-lightbox-backdrop"></div><div class="ci-lightbox-card" role="dialog" aria-modal="true"><button type="button" class="ci-lightbox-close" aria-label="Cerrar">×</button><img src="${escAttrValue(url)}" alt="${escAttrValue(alt)}"></div>`;
     box.style.cssText='position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;';
     box.querySelector('.ci-lightbox-backdrop').style.cssText='position:absolute;inset:0;background:rgba(20,20,20,.82);';
     box.querySelector('.ci-lightbox-card').style.cssText='position:relative;z-index:1;max-width:94vw;max-height:94vh;display:flex;align-items:center;justify-content:center;';
-    const lbImg=box.querySelector('img'); lbImg.style.cssText='display:block;max-width:94vw;max-height:90vh;width:auto;height:auto;object-fit:contain;box-shadow:0 18px 50px rgba(0,0,0,.28);';
-    const close=()=>box.remove();
-    box.querySelector('.ci-lightbox-close').style.cssText='position:absolute;right:-10px;top:-10px;width:36px;height:36px;border:0;border-radius:50%;background:#fff;color:#222;font-size:24px;line-height:1;cursor:pointer;z-index:2;box-shadow:0 4px 15px rgba(0,0,0,.18);';
-    box.querySelector('.ci-lightbox-close').onclick=close;
-    box.querySelector('.ci-lightbox-backdrop').onclick=close;
-    box.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
-    document.body.appendChild(box); box.tabIndex=-1; box.focus();
+    const lbImg=box.querySelector('img');lbImg.style.cssText='display:block;max-width:94vw;max-height:90vh;width:auto;height:auto;object-fit:contain;box-shadow:0 18px 50px rgba(0,0,0,.28);';
+    const close=()=>box.remove();box.querySelector('.ci-lightbox-close').style.cssText='position:absolute;right:-10px;top:-10px;width:36px;height:36px;border:0;border-radius:50%;background:#fff;color:#222;font-size:24px;line-height:1;cursor:pointer;z-index:2;box-shadow:0 4px 15px rgba(0,0,0,.18);';box.querySelector('.ci-lightbox-close').onclick=close;box.querySelector('.ci-lightbox-backdrop').onclick=close;box.addEventListener('keydown',e=>{if(e.key==='Escape')close()});document.body.appendChild(box);box.tabIndex=-1;box.focus();
   };
-  $('pageGalleryImage')?.addEventListener('click',()=>openGalleryLightbox(usableImages[gi],`${p.name} · imagen ${gi+1}`));
-  $('pageAdd').onclick=()=>openProjectPicker(p.id);
-  $('pageFav').onclick=()=>{
-    toggleFavorite(p.id);
-    $('pageFav').textContent=state.favorites.has(p.id)?'♥ Guardado':'♡ Guardar';
+  const show=i=>{
+    gi=(i+usableImages.length)%usableImages.length;const url=usableImages[gi];const gallery=$('pageGallery');const real=isRealImageUrl(url);gallery.classList.toggle('has-real-image',real);gallery.style.cssText=imageBackgroundStyle(url,p.tone1,p.tone2);
+    let image=$('pageGalleryImage');if(real){if(!image){image=document.createElement('img');image.id='pageGalleryImage';gallery.insertBefore(image,$('pageGalleryLabel'));image.addEventListener('click',()=>openGalleryLightbox(usableImages[gi],`${p.name} · imagen ${gi+1}`));}image.src=url;image.alt=`${p.name} · imagen ${gi+1}`;image.loading='eager';image.decoding='async';image.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;z-index:1;cursor:zoom-in';}else if(image)image.remove();
+    $('pageGalleryLabel').textContent='';$('pageCounter').textContent=`${gi+1} / ${usableImages.length}`;document.querySelectorAll('[data-page-gallery]').forEach((b,j)=>b.classList.toggle('active',j===gi));
   };
-  $('pageFav').textContent=state.favorites.has(p.id)?'♥ Guardado':'♡ Guardar';
-  const getDocumentUrl=async(file)=>{
-    if(!file) throw new Error('Documento no encontrado.');
-    const {data,error}=await supabaseClient.storage.from('product-documents').createSignedUrl(file.file_url,3600);
-    if(error) throw error;
-    if(!data?.signedUrl) throw new Error('No se pudo generar el enlace del documento.');
-    return data.signedUrl;
-  };
-  document.querySelectorAll('[data-document-open]').forEach(btn=>btn.onclick=async()=>{
-    const file=documentFiles[Number(btn.dataset.documentOpen)];
-    if(!file) return;
-    btn.disabled=true;
-    const old=btn.textContent; btn.textContent='Abriendo…';
-    try{
-      const signedUrl=await getDocumentUrl(file);
-      window.open(signedUrl,'_blank','noopener');
-    }catch(error){
-      console.error(error);
-      toast('No se pudo abrir el documento.');
-    }finally{
-      btn.disabled=false; btn.textContent=old;
-    }
-  });
-  document.querySelectorAll('[data-document-download]').forEach(btn=>btn.onclick=async()=>{
-    const file=documentFiles[Number(btn.dataset.documentDownload)];
-    if(!file) return;
-    btn.disabled=true;
-    const old=btn.textContent; btn.textContent='Preparando…';
-    try{
-      const signedUrl=await getDocumentUrl(file);
-      const response=await fetch(signedUrl);
-      if(!response.ok) throw new Error('No se pudo descargar el archivo.');
-      const blob=await response.blob();
-      const objectUrl=URL.createObjectURL(blob);
-      const a=document.createElement('a');
-      a.href=objectUrl;
-      a.download=file.file_name||'documento';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(()=>URL.revokeObjectURL(objectUrl),1000);
-    }catch(error){
-      console.error(error);
-      toast('No se pudo descargar el documento.');
-    }finally{
-      btn.disabled=false; btn.textContent=old;
-    }
-  });
+  $('pagePrev').onclick=()=>show(gi-1);$('pageNext').onclick=()=>show(gi+1);document.querySelectorAll('[data-page-gallery]').forEach(b=>b.onclick=()=>show(+b.dataset.pageGallery));$('pageGalleryImage')?.addEventListener('click',()=>openGalleryLightbox(usableImages[gi],`${p.name} · imagen ${gi+1}`));
+  $('pageAdd').onclick=()=>openProjectPicker(p.id);$('pageFav').onclick=()=>{toggleFavorite(p.id);$('pageFav').textContent=state.favorites.has(p.id)?'♥ Guardado':'♡ Guardar';};$('pageFav').textContent=state.favorites.has(p.id)?'♥ Guardado':'♡ Guardar';
+  const getDocumentUrl=async(file)=>{if(!file)throw new Error('Documento no encontrado.');const {data,error}=await supabaseClient.storage.from('product-documents').createSignedUrl(file.file_url,3600);if(error)throw error;if(!data?.signedUrl)throw new Error('No se pudo generar el enlace del documento.');return data.signedUrl;};
+  document.querySelectorAll('[data-document-open]').forEach(btn=>btn.onclick=async()=>{const file=documentFiles[Number(btn.dataset.documentOpen)];if(!file)return;btn.disabled=true;const old=btn.textContent;btn.textContent='Abriendo…';try{const signedUrl=await getDocumentUrl(file);window.open(signedUrl,'_blank','noopener');}catch(error){console.error(error);toast('No se pudo abrir el documento.');}finally{btn.disabled=false;btn.textContent=old;}});
+  document.querySelectorAll('[data-document-download]').forEach(btn=>btn.onclick=async()=>{const file=documentFiles[Number(btn.dataset.documentDownload)];if(!file)return;btn.disabled=true;const old=btn.textContent;btn.textContent='Preparando…';try{const signedUrl=await getDocumentUrl(file);const response=await fetch(signedUrl);if(!response.ok)throw new Error('No se pudo descargar el archivo.');const blob=await response.blob();const objectUrl=URL.createObjectURL(blob);const a=document.createElement('a');a.href=objectUrl;a.download=file.file_name||'documento';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(objectUrl),1000);}catch(error){console.error(error);toast('No se pudo descargar el documento.');}finally{btn.disabled=false;btn.textContent=old;}});
 }
+
 function documentTypeLabel(type){
   return ({technical_sheet:'Ficha técnica',catalog:'Catálogo',installation:'Instalación',maintenance:'Mantenimiento',certification:'Certificación',other:'Otro'})[type]||'Documento';
 }
