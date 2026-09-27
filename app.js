@@ -343,7 +343,76 @@ function matches(p){const q=$("searchInput").value.toLowerCase().trim();const ha
 function renderProducts(){const list=products.filter(matches);if($("resultsCount")) $("resultsCount").textContent=`${list.length} productos`;if($("productGrid")) $("productGrid").innerHTML=list.length?list.map(productCardHTML).join(""):`<p class="empty">No encontramos productos con esos criterios.</p>`;bindProductCards()}
 function updateCounts(){if($("favoriteCount")) $("favoriteCount").textContent=state.favorites.size;if($("projectCount")) $("projectCount").textContent=state.projects.length}
 function detail(label,value){return `<div class="detail"><strong>${esc(label)}</strong>${esc(value||"—")}</div>`}
-function technicalDetails(p){const t=p.technical||{};const map={power:"Potencia",lumens:"Lúmenes",colorTemperature:"Temperatura de color",CRI:"CRI",IP:"IP",dimmable:"Dimerizable",installation:"Instalación",waterConsumption:"Consumo de agua",flowRate:"Caudal",format:"Formato",rectified:"Rectificado",shadeVariation:"Variación de tono",slipRating:"Antideslizante",piecesPerBox:"Piezas/caja",coveragePerBox:"m²/caja",recommendedGrout:"Boquilla recomendada"};return Object.entries(map).filter(([k])=>t[k]&&t[k]!=="—").map(([k,l])=>detail(l,t[k])).join("")}
+function technicalDetails(p){
+  const t=p.technical&&typeof p.technical==='object'?p.technical:{};
+  const category=String(p.category||'').toLowerCase();
+  const subcategory=String(p.subcategory||'').toLowerCase();
+  const text=`${category} ${subcategory}`;
+
+  const furniture=[
+    ['dimensions','Dimensiones'],
+    ['load','Capacidad de carga'],
+    ['seatHeight','Altura de asiento'],
+    ['upholstery','Tapizado'],
+    ['structure','Estructura']
+  ];
+  const lighting=[
+    ['power','Potencia'],
+    ['lumens','Lúmenes'],
+    ['colorTemperature','Temperatura de color'],
+    ['CRI','CRI'],
+    ['IP','IP'],
+    ['dimmable','Dimerizable']
+  ];
+  const textiles=[
+    ['composition','Composición'],
+    ['width','Ancho'],
+    ['martindale','Martindale'],
+    ['fireRating','Resistencia al fuego'],
+    ['cleaning','Limpieza']
+  ];
+  const ceramics=[
+    ['format','Formato'],
+    ['thickness','Espesor'],
+    ['rectified','Rectificado'],
+    ['shadeVariation','Variación de tono'],
+    ['slipRating','Antideslizante'],
+    ['piecesPerBox','Piezas/caja'],
+    ['coveragePerBox','m²/caja'],
+    ['recommendedGrout','Boquilla recomendada']
+  ];
+  const sanitary=[
+    ['installation','Instalación'],
+    ['waterConsumption','Consumo de agua'],
+    ['pressure','Presión'],
+    ['flowRate','Caudal'],
+    ['certifications','Certificaciones']
+  ];
+
+  let fields=furniture;
+  if(text.includes('ilumin')) fields=lighting;
+  else if(text.includes('textil')) fields=textiles;
+  else if(text.includes('acabado') || text.includes('cerám') || text.includes('porcelanato') || text.includes('revest')) fields=ceramics;
+  else if(text.includes('baño') || text.includes('bano') || text.includes('sanitario') || text.includes('grifer')) fields=sanitary;
+
+  return fields
+    .filter(([key])=>t[key]!==undefined && t[key]!==null && String(t[key]).trim()!=='' && String(t[key])!=='—')
+    .map(([key,label])=>detail(label,t[key]))
+    .join('');
+}
+
+function technicalSectionTitle(p){
+  const c=String(p.category||'').toLowerCase();
+  if(c.includes('ilumin')) return 'Especificación técnica · Iluminación';
+  if(c.includes('textil')) return 'Especificación técnica · Textiles';
+  if(c.includes('acabado')) return 'Especificación técnica · Acabados';
+  if(c.includes('baño') || c.includes('bano')) return 'Especificación técnica · Baño';
+  if(c.includes('mobiliario')) return 'Especificación técnica · Mobiliario';
+  if(c.includes('madera')) return 'Especificación técnica · Maderas';
+  if(c.includes('piedra')) return 'Especificación técnica · Piedras';
+  if(c.includes('exterior')) return 'Especificación técnica · Exterior';
+  return 'Especificación técnica';
+}
 function openProduct(id){const p=products.find(x=>x.id===id);if(!p||!$("productModal")||!( $("modalContent") )){toast("No se pudo abrir la vista rápida");return;}const images=p.images||[];const files=allFiles(p);$("modalContent").innerHTML=`<div class="modal-content"><div class="gallery"><div class="gallery-main" id="galleryMain" style="background:linear-gradient(145deg,${p.tone1},${p.tone2})"><span class="gallery-label" id="galleryLabel" aria-hidden="true"></span><button class="gallery-arrow prev" id="galleryPrev">‹</button><button class="gallery-arrow next" id="galleryNext">›</button><span class="gallery-counter" id="galleryCounter">1 / ${images.length}</span></div><div class="gallery-thumbs">${images.map((im,i)=>`<button class="gallery-thumb ${i===0?'active':''}" data-gallery="${i}" style="background:linear-gradient(145deg,${p.tone1},${p.tone2})">${esc(im)}</button>`).join("")}</div></div><div class="modal-info"><p class="eyebrow">${esc(p.category)} · ${esc(p.subcategory)}</p><h3>${esc(p.name)}</h3><div class="modal-brand">${esc(p.brand)} · ${esc(p.collection)}</div><div class="modal-price">${p.price==null?"Consultar precio":esc(p.currency==="PEN"?`S/ ${p.price}`:p.price)}</div><p class="modal-description">${esc(p.description)}</p><div class="detail-grid">${detail("SKU",p.sku)}${detail("Diseñador",p.designer)}${detail("Fabricante",p.manufacturer)}${detail("Año",p.year)}${detail("Materialidad",p.materials.join(", "))}${detail("Construcción",p.construction)}${detail("Acabado",p.finish.join(", "))}${detail("Textura",p.surfaceTexture)}${detail("Color",p.colors.join(", "))}${detail("Variantes",p.variants.join(", "))}${detail("Dimensiones",Object.values(p.dimensions||{}).filter(Boolean).join(" × ")||"—")}${detail("Estilo",p.style.join(", "))}${detail("Uso",p.applications.join(", "))}${detail("Interior / exterior",p.indoorOutdoor)}${detail("Disponibilidad",p.availability)}${detail("Tiempo de entrega",p.leadTime)}${detail("Pedido mínimo",p.minimumOrder)}${detail("Garantía",p.warranty)}${detail("Origen",p.countryOfOrigin)}${detail("Precio actualizado",p.priceLastUpdated)}${detail("Mantenimiento",p.maintenance)}${technicalDetails(p)}</div><div class="file-section"><span class="file-title">ARCHIVOS DISPONIBLES</span><div class="badges">${files.map(f=>`<span class="badge">${esc(f)}</span>`).join("")||'<span class="empty">Pendiente</span>'}</div></div><div class="modal-actions"><button class="primary" onclick="openProjectPicker(${p.id});closeModal('productModal')">＋ Añadir a proyecto</button><button onclick="toggleFavorite(${p.id})">♡ Favorito</button></div></div></div>`;let gi=0;const show=i=>{gi=(i+images.length)%images.length;$("galleryLabel").textContent=images[gi];$("galleryCounter").textContent=`${gi+1} / ${images.length}`;document.querySelectorAll('.gallery-thumb').forEach((b,j)=>b.classList.toggle('active',j===gi))};$("galleryPrev").onclick=()=>show(gi-1);$("galleryNext").onclick=()=>show(gi+1);document.querySelectorAll('.gallery-thumb').forEach(b=>b.onclick=()=>show(+b.dataset.gallery));$("productModal").classList.add('open')}
 function closeModal(id){$(id).classList.remove("open")}
 async function toggleFavorite(id){
@@ -923,7 +992,7 @@ function renderProductPage(){
 
       <section class="page-section ci-section"><div class="ci-section-head"><div><span class="ci-section-number">01 · IDENTIFICACIÓN</span><h2>Identificación</h2><p class="ci-section-note">Datos principales para reconocer y especificar la pieza.</p></div></div><div class="detail-grid">${identification.join('')}</div></section>
       <section class="page-section ci-section"><div class="ci-section-head"><div><span class="ci-section-number">02 · MATERIALIDAD Y DISEÑO</span><h2>Materialidad y diseño</h2><p class="ci-section-note">Características visuales, constructivas y de aplicación.</p></div></div><div class="detail-grid">${materiality.join('')}</div></section>
-      <section class="page-section ci-section"><div class="ci-section-head"><div><span class="ci-section-number">03 · ESPECIFICACIÓN TÉCNICA</span><h2>Especificación técnica</h2><p class="ci-section-note">Información técnica disponible para la especificación.</p></div></div><div class="detail-grid">${technicalDetails(p)||'<span class="ci-empty">No hay especificaciones técnicas adicionales.</span>'}</div></section>
+      <section class="page-section ci-section"><div class="ci-section-head"><div><span class="ci-section-number">03 · ESPECIFICACIÓN TÉCNICA</span><h2>${esc(technicalSectionTitle(p))}</h2><p class="ci-section-note">Campos técnicos aplicables a esta categoría.</p></div></div><div class="detail-grid">${technicalDetails(p)||'<span class="ci-empty">Todavía no hay especificaciones técnicas registradas.</span>'}</div></section>
       <section class="page-section ci-section"><div class="ci-section-head"><div><span class="ci-section-number">04 · INFORMACIÓN COMERCIAL</span><h2>Información comercial</h2><p class="ci-section-note">Datos necesarios para cotizar y coordinar la compra.</p></div></div><div class="detail-grid">${commercial.join('')}</div></section>
       <section class="page-section ci-section"><div class="ci-section-head"><div><span class="ci-section-number">05 · ORIGEN Y MANTENIMIENTO</span><h2>Origen y mantenimiento</h2></div></div><div class="detail-grid">${origin.join('')}</div></section>
       <section class="page-section ci-section"><div class="ci-section-head"><div><span class="ci-section-number">06 · ARCHIVOS PARA DISEÑO</span><h2>Archivos para diseño</h2><p class="ci-section-note">Documentación disponible para desarrollar y especificar el producto.</p></div></div>
